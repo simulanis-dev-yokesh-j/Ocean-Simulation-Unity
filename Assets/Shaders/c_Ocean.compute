@@ -1,0 +1,62 @@
+#pragma kernel CSMain
+
+#define PI 3.14159265359
+#define G 9.81
+
+// Inputs
+int Resolution;
+int WaveCount;
+float Frequency;
+float WindSpeed;
+float DistanceFromShore;
+
+// Outputs
+RWTexture2D<float4> Result;
+
+float JONSWAP(float angularFrequency)
+{
+    float alpha = 0.076 * pow(WindSpeed * WindSpeed / DistanceFromShore * G, 0.22); 
+    float gamma = 3.3;
+    float peakFrequency = 22 * (G * G / WindSpeed * DistanceFromShore);
+    float sigma = angularFrequency <= peakFrequency ? 0.07 : 0.09;
+    float r = pow(gamma, exp(-pow(angularFrequency - peakFrequency, 2) / (2 * sigma * sigma * peakFrequency * peakFrequency)));
+    float peakEnhancement = pow(gamma, r);
+
+    return alpha * G * G / pow(angularFrequency, 5) *
+        exp(-1.25 * pow(peakFrequency / angularFrequency, 4)) *
+            peakEnhancement; 
+}
+
+float WaveDispertion(float kMag)
+{
+    float oceanDepth = 1000;
+    return sqrt(G * kMag * tanh(min(kMag * oceanDepth, 20)));
+}
+
+float Random (float2 seed) 
+{
+    return frac(sin(dot(seed.xy,float2(12.9898,78.233))) * 43758.5453123);
+}
+
+float WaveHeight(float2 waveVector, float2 pos)
+{
+    float angularFrequency = WaveDispertion(length(waveVector));
+
+    float rand1 = Random(pos);
+    float rand2 = Random(pos+1);
+
+    return 1 / sqrt(2) * (rand1 + rand2) * sqrt(JONSWAP(angularFrequency));
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int n = WaveCount / 2 - 1;
+    // id.xy - n, we need to shift to the center of the texture
+    float2 k = 2.0f * PI * (id.xy - n) / Resolution;
+    float height = WaveHeight(k, id.xy);
+    
+    float angularFrequency = WaveDispertion(length(k));
+    
+    Result[id.xy] = float4(k.x, 0, 0, 1);
+}
