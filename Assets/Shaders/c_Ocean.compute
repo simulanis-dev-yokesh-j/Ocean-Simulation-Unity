@@ -4,59 +4,63 @@
 #define G 9.81
 
 // Inputs
+int Size;
 int Resolution;
-int WaveCount;
-float Frequency;
 float WindSpeed;
 float DistanceFromShore;
+Texture2D<float2> Noise;
 
 // Outputs
 RWTexture2D<float4> Result;
 
 float JONSWAP(float angularFrequency)
 {
-    float alpha = 0.076 * pow(WindSpeed * WindSpeed / DistanceFromShore * G, 0.22); 
+    float alpha = 0.076 * pow(pow(WindSpeed, 2) / (DistanceFromShore * G), 0.22); 
     float gamma = 3.3;
-    float peakFrequency = 22 * (G * G / WindSpeed * DistanceFromShore);
+    float peakFrequency = 22 * (pow(G, 2) / (WindSpeed * DistanceFromShore));
     float sigma = angularFrequency <= peakFrequency ? 0.07 : 0.09;
-    float r = pow(gamma, exp(-pow(angularFrequency - peakFrequency, 2) / (2 * sigma * sigma * peakFrequency * peakFrequency)));
+
+    float r_1 = 2 * sigma * sigma * peakFrequency * peakFrequency;
+    float r_2 = (angularFrequency - peakFrequency) * (angularFrequency - peakFrequency);
+    float r = exp(-r_1 / r_2);
     float peakEnhancement = pow(gamma, r);
 
-    return alpha * G * G / pow(angularFrequency, 5) *
-        exp(-1.25 * pow(peakFrequency / angularFrequency, 4)) *
-            peakEnhancement; 
+    return alpha * G * G / pow(angularFrequency, 5)
+                 * exp(-1.25 * pow(peakFrequency / angularFrequency, 4))
+                 * peakEnhancement; 
 }
 
 float WaveDispertion(float kMag)
 {
     float oceanDepth = 1000;
-    return sqrt(G * kMag * tanh(min(kMag * oceanDepth, 20)));
+    return sqrt(G * kMag * tanh(min(kMag * oceanDepth, 15)));
 }
 
-float Random (float2 seed) 
+float WaveHeight(float kMagnetude, float2 pos)
 {
-    return frac(sin(dot(seed.xy,float2(12.9898,78.233))) * 43758.5453123);
-}
+    float angularFrequency = WaveDispertion(kMagnetude);
 
-float WaveHeight(float2 waveVector, float2 pos)
-{
-    float angularFrequency = WaveDispertion(length(waveVector));
-
-    float rand1 = Random(pos);
-    float rand2 = Random(pos+1);
+    float rand1 = Noise[pos.xy].x;
+    float rand2 = Noise[pos.xy].y;
 
     return 1 / sqrt(2) * (rand1 + rand2) * sqrt(JONSWAP(angularFrequency));
+}
+
+float2 WaveVector(float2 pos)
+{
+    float n = Resolution / 2;
+    float k_x = 2 * PI * (pos.x - n) / Size;
+    float k_z = 2 * PI * (pos.y - n) / Size;
+    return  float2(k_x, k_z);
 }
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    int n = WaveCount / 2 - 1;
-    // id.xy - n, we need to shift to the center of the texture
-    float2 k = 2.0f * PI * (id.xy - n) / Resolution;
-    float height = WaveHeight(k, id.xy);
+    // offset to center
+    float2 k = WaveVector(id.xy);
+    float kMagnetude = length(k);
+    float height = WaveHeight(kMagnetude, id.xy);
     
-    float angularFrequency = WaveDispertion(length(k));
-    
-    Result[id.xy] = float4(k.x, 0, 0, 1);
+    Result[id.xy] = float4(height, 0, 0, 1);
 }

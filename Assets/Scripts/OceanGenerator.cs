@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,22 +9,25 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private Material _material;
     [SerializeField] private ComputeShader _computeShader;
     [SerializeField] private RawImage _computeImage;
-    
-    [Header("Settings")]
-    [SerializeField] private Vector2 _size = new Vector2(100, 100);
-    [SerializeField] private int _resolution = 50;
+
+    [Header("Settings")] 
+    [SerializeField] private int _size = 256;
+    [SerializeField] private int _resolution = 256;
     
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
     private ComputeBuffer _computeBuffer;
+    private Texture2D _gaussianNoise;
 
     private void Start()
     {
-        //_meshFilter = _ocean.AddComponent<MeshFilter>();
-        //_meshRenderer = _ocean.AddComponent<MeshRenderer>();
+        // _meshFilter = _ocean.AddComponent<MeshFilter>();
+        // _meshRenderer = _ocean.AddComponent<MeshRenderer>();
+        //
+        // GeneratePlane(_size, _resolution);
+        // _meshRenderer.material = _material;
         
-        //GeneratePlane(_size, _resolution);
-        //_meshRenderer.material = _material;
+        _gaussianNoise = GenerateGaussianNoise(_resolution);
         
         // Create a new RenderTexture
         RenderTexture renderTexture = new RenderTexture(_resolution, _resolution, 24);
@@ -31,11 +35,11 @@ public class OceanGenerator : MonoBehaviour
         renderTexture.Create();
         
         // Set constants
+        _computeShader.SetInt("Size", _size);
         _computeShader.SetInt("Resolution", _resolution);
-        _computeShader.SetInt("WaveCount", 100);
-        _computeShader.SetFloat("Frequency", 0.1f);
         _computeShader.SetFloat("WindSpeed", 10f);
         _computeShader.SetFloat("DistanceFromShore", 1000f);
+        _computeShader.SetTexture(0, "Noise", _gaussianNoise);
         
         // Bind the RenderTexture to the compute shader
         _computeShader.SetTexture(0, "Result", renderTexture);
@@ -47,7 +51,7 @@ public class OceanGenerator : MonoBehaviour
         _computeImage.texture = renderTexture;
     }
 
-    private void GeneratePlane(Vector2 size, int resolution)
+    private void GeneratePlane(int size, int resolution)
     {
         Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
         int[] triangles = new int[resolution * resolution * 6];
@@ -61,7 +65,7 @@ public class OceanGenerator : MonoBehaviour
         {
             for (int x = 0; x <= resolution; x++)
             {
-                vertices[vertIndex] = new Vector3(size.x * (x * increment - .5f), 0, size.y * (y * increment - .5f));
+                vertices[vertIndex] = new Vector3(size * (x * increment - .5f), 0, size * (y * increment - .5f));
                 if (x != resolution && y != resolution)
                 {
                     triangles[triIndex] = vertIndex;
@@ -86,5 +90,31 @@ public class OceanGenerator : MonoBehaviour
 
         //Assign mesh to mesh filter
         _meshFilter.mesh = mesh;
+    }
+    
+    Texture2D GenerateGaussianNoise(int size)
+    {
+        Texture2D noise = new Texture2D(size, size, TextureFormat.RGFloat, false, true);
+        noise.filterMode = FilterMode.Point;
+        
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                noise.SetPixel(i, j, new Vector4(NormalRandom(), NormalRandom()));
+            }
+        }
+        
+        noise.Apply();
+        return noise;
+    }
+    
+    /// <summary>
+    /// Box-Muller transform to generate a random number from a normal distribution
+    /// </summary>
+    /// <returns></returns>
+    float NormalRandom()
+    {
+        return Mathf.Cos(2 * Mathf.PI * Random.value) * Mathf.Sqrt(-2 * Mathf.Log(Random.value));
     }
 }
