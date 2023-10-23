@@ -7,7 +7,9 @@
 int Size;
 int Resolution;
 float WindSpeed;
-float DistanceFromShore;
+float Fetch;
+float PeakEnhancementFactor;
+float Depth; // later we would want to use texture for this.
 Texture2D<float2> Noise;
 
 // Outputs
@@ -15,28 +17,41 @@ RWTexture2D<float4> Result;
 
 float JONSWAP(float angularFrequency)
 {
-    float alpha = 0.076 * pow(pow(WindSpeed, 2) / (DistanceFromShore * G), 0.22); 
-    float gamma = 3.3;
-    float peakFrequency = 22 * (pow(G, 2) / (WindSpeed * DistanceFromShore));
+    float alpha = 0.076 * pow(pow(WindSpeed, 2) / (Fetch * G), 0.22); 
+    float peakFrequency = 22 * (pow(G, 2) / (WindSpeed * Fetch));
     float sigma = angularFrequency <= peakFrequency ? 0.07 : 0.09;
 
     float r_1 = 2 * sigma * sigma * peakFrequency * peakFrequency;
     float r_2 = (angularFrequency - peakFrequency) * (angularFrequency - peakFrequency);
     float r = exp(-r_1 / r_2);
-    float peakEnhancement = pow(gamma, r);
 
     return alpha * G * G / pow(angularFrequency, 5)
                  * exp(-1.25 * pow(peakFrequency / angularFrequency, 4))
-                 * peakEnhancement; 
+                 * pow(PeakEnhancementFactor, r); 
+}
+
+float DepthAttenuation(float angularFrequency, float waterDepth)
+{
+    // depthAdjustedAngularFrequency
+    float w_h = angularFrequency * sqrt(waterDepth/G);
+    
+    if(w_h <= 1)
+        return 0.5 * angularFrequency * waterDepth * waterDepth;
+
+    return 1 - 0.5 * pow(2 - w_h, 2);
+}
+
+float TMA(float angularFrequency, float waterDepth)
+{
+    return JONSWAP(angularFrequency) * DepthAttenuation(angularFrequency, waterDepth);
 }
 
 float WaveDispertion(float kMag)
 {
-    float oceanDepth = 1000;
-    return sqrt(G * kMag * tanh(min(kMag * oceanDepth, 15)));
+    return sqrt(G * kMag * tanh(min(kMag * Depth, 15)));
 }
 
-float WaveHeight(float kMagnetude, float2 pos)
+float WaveHeight(float2 pos, float kMagnetude)
 {
     float angularFrequency = WaveDispertion(kMagnetude);
 
@@ -60,7 +75,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // offset to center
     float2 k = WaveVector(id.xy);
     float kMagnetude = length(k);
-    float height = WaveHeight(kMagnetude, id.xy);
+    float height = WaveHeight(id.xy, kMagnetude);
     
     Result[id.xy] = float4(height, 0, 0, 1);
 }

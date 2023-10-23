@@ -631,6 +631,10 @@ MonoBehaviour:
   _computeImage: {fileID: 2138357741}
   _size: 64
   _resolution: 512
+  _windSpeed: 5
+  _fetch: 1000
+  _peakEnhancementFactor: 3.3
+  _oceanDepth: 1000
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0

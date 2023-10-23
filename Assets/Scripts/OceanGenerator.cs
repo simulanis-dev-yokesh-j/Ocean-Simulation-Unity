@@ -1,6 +1,7 @@
-using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class OceanGenerator : MonoBehaviour
 {
@@ -10,9 +11,13 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private ComputeShader _computeShader;
     [SerializeField] private RawImage _computeImage;
 
-    [Header("Settings")] 
+    [Header("JONSWAP Spectrum Parameters")] 
     [SerializeField] private int _size = 256;
     [SerializeField] private int _resolution = 256;
+    [SerializeField] private float _windSpeed = 10f;
+    [SerializeField] private float _fetch = 1000f;
+    [SerializeField] private float _peakEnhancementFactor = 3.3f;
+    [FormerlySerializedAs("_oceanDepth")] [SerializeField] private float Depth = 1000f;
     
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
@@ -28,7 +33,20 @@ public class OceanGenerator : MonoBehaviour
         // _meshRenderer.material = _material;
         
         _gaussianNoise = GenerateGaussianNoise(_resolution);
+        InitFrequencySpectrum();
+    }
+
+    private void OnValidate()
+    {
+        if(Application.isPlaying == false)
+            return;
         
+        _gaussianNoise = GenerateGaussianNoise(_resolution);
+        InitFrequencySpectrum();
+    }
+
+    private void InitFrequencySpectrum()
+    {
         // Create a new RenderTexture
         RenderTexture renderTexture = new RenderTexture(_resolution, _resolution, 24);
         renderTexture.enableRandomWrite = true;
@@ -37,10 +55,12 @@ public class OceanGenerator : MonoBehaviour
         // Set constants
         _computeShader.SetInt("Size", _size);
         _computeShader.SetInt("Resolution", _resolution);
-        _computeShader.SetFloat("WindSpeed", 10f);
-        _computeShader.SetFloat("DistanceFromShore", 1000f);
+        _computeShader.SetFloat("WindSpeed", _windSpeed);
+        _computeShader.SetFloat("Fetch", _fetch);
+        _computeShader.SetFloat("PeakEnhancementFactor", _peakEnhancementFactor);
+        _computeShader.SetFloat("Depth", Depth);
         _computeShader.SetTexture(0, "Noise", _gaussianNoise);
-        
+
         // Bind the RenderTexture to the compute shader
         _computeShader.SetTexture(0, "Result", renderTexture);
 
