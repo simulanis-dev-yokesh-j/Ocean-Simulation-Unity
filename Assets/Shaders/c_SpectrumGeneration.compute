@@ -1,11 +1,12 @@
 #pragma kernel CalculateSpectrum
+#pragma kernel CalculateHeight
 
 #define PI 3.14159265359
 #define G 9.81
 
 // Inputs
-int Size;
-int Resolution;
+uint Size; // M and N
+uint LengthScale;
 float WindSpeed;
 float Fetch;
 float PeakEnhancementFactor;
@@ -14,6 +15,7 @@ Texture2D<float2> Noise;
 
 // Outputs
 RWTexture2D<float3> SpectrumMap;
+RWTexture2D<float3> HeightMap;
 
 float JONSWAP(float angularFrequency)
 {
@@ -55,8 +57,9 @@ float WaveDispertion(float kMag)
     return sqrt(G * kMag * tanh(min(kMag * Depth, 15)));
 }
 
-float WaveAmplitude(float2 pos, float kMagnetude)
+float WaveAmplitude(float2 pos, float2 k)
 {
+    float kMagnetude = length(k);
     float angularFrequency = WaveDispertion(kMagnetude);
 
     float rand1 = Noise[pos.xy].x;
@@ -67,10 +70,10 @@ float WaveAmplitude(float2 pos, float kMagnetude)
 
 float2 WaveVector(float2 pos)
 {
-    float n = Resolution / 2;
-    float k_x = 2 * PI * (pos.x - n) / Size;
-    float k_z = 2 * PI * (pos.y - n) / Size;
-    return  float2(k_x, k_z);
+    float n = Size / 2;
+    float k_x = 2 * PI * (pos.x - n) / LengthScale;
+    float k_z = 2 * PI * (pos.y - n) / LengthScale;
+    return float2(k_x, k_z);
 }
 
 [numthreads(8,8,1)]
@@ -78,8 +81,29 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
 {
     // offset to center
     float2 k = WaveVector(id.xy);
-    float kMagnetude = length(k);
-    float amplitude = WaveAmplitude(id.xy, kMagnetude);
+    float amplitude = WaveAmplitude(id.xy, k);
     
     SpectrumMap[id.xy] = float3(amplitude, 0, 0);
+}
+
+[numthreads(8,8,1)]
+void CalculateHeight (uint3 id : SV_DispatchThreadID)
+{
+    // float sum = 0;
+    // float n = Size / 2;
+    // float2 pos = float2((id.x - n)*LengthScale/Size, (id.y - n)*LengthScale/Size);
+    // //
+    // // sum up every frequency from spectrum for each heightmap pixel
+    // for(int x = 0; x < Size; x++)
+    // {
+    //     for (int y = 0; y < Size; y++)
+    //     {
+    //         float2 k = WaveVector(float2(x,y));
+    //         float2 uv = float2(x / (float)Size, y / (float)Size);
+    //         
+    //         sum += SpectrumMap[uv].r * exp(dot(k, pos));
+    //     }
+    // }
+    
+    HeightMap[id.xy] = float3(id.x, 0, 0);
 }

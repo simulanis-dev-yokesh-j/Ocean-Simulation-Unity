@@ -700,14 +700,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _ocean: {fileID: 1089990282}
   _material: {fileID: 2100000, guid: 67fbac55d83f64253b4c13f8cb37bced, type: 2}
-  _spectrumComputeShader: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732,
-    type: 3}
+  _computeShader: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732, type: 3}
   _spectrumMapImage: {fileID: 2138357741}
-  _hightMapComputeShader: {fileID: 7200000, guid: d1bf576b9e430447ba6443ec5d72a009,
-    type: 3}
   _hightMapImage: {fileID: 295894770}
-  _size: 512
-  _resolution: 1000
+  _size: 256
+  _lengthScale: 512
   _windSpeed: 31
   _fetch: 1000
   _peakEnhancementFactor: 3.3

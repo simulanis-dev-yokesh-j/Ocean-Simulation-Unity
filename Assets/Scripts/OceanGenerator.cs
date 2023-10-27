@@ -8,14 +8,14 @@ public class OceanGenerator : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject _ocean;
     [SerializeField] private Material _material;
-    [SerializeField] private ComputeShader _spectrumComputeShader;
+    [SerializeField] private ComputeShader _computeShader;
     [SerializeField] private RawImage _spectrumMapImage;
-    [SerializeField] private ComputeShader _hightMapComputeShader;
+    //[SerializeField] private ComputeShader _hightMapComputeShader;
     [SerializeField] private RawImage _hightMapImage;
 
     [Header("Spectrum Parameters")] 
-    [SerializeField] private int _size = 256;
-    [SerializeField] private int _resolution = 256;
+    [SerializeField] private int _size = 512;
+    [SerializeField] private int _lengthScale = 1024;
     [SerializeField] private float _windSpeed = 10f;
     [SerializeField] private float _fetch = 1000f;
     [SerializeField] private float _peakEnhancementFactor = 3.3f;
@@ -23,7 +23,6 @@ public class OceanGenerator : MonoBehaviour
     
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
-    private ComputeBuffer _computeBuffer;
     private Texture2D _gaussianNoise;
 
     private void Start()
@@ -34,7 +33,7 @@ public class OceanGenerator : MonoBehaviour
         // GeneratePlane(_size, _resolution);
         // _meshRenderer.material = _material;
         
-        _gaussianNoise = GenerateGaussianNoise(_resolution);
+        _gaussianNoise = GenerateGaussianNoise(_size);
         InitSpectrumMap();
         GenerateHightMap();
     }
@@ -44,7 +43,7 @@ public class OceanGenerator : MonoBehaviour
         if(Application.isPlaying == false)
             return;
         
-        _gaussianNoise = GenerateGaussianNoise(_resolution);
+        _gaussianNoise = GenerateGaussianNoise(_size);
         InitSpectrumMap();
         GenerateHightMap();
     }
@@ -52,27 +51,27 @@ public class OceanGenerator : MonoBehaviour
     private void InitSpectrumMap()
     {
         // Create a new RenderTexture
-        RenderTexture renderTexture = new RenderTexture(_resolution, _resolution, 24);
+        RenderTexture renderTexture = new RenderTexture(_lengthScale, _lengthScale, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
         
         // Find kernel
-        int kernel = _spectrumComputeShader.FindKernel("CalculateSpectrum");
+        int kernel = _computeShader.FindKernel("CalculateSpectrum");
         
         // Set constants
-        _spectrumComputeShader.SetInt("Size", _size);
-        _spectrumComputeShader.SetInt("Resolution", _resolution);
-        _spectrumComputeShader.SetFloat("WindSpeed", _windSpeed);
-        _spectrumComputeShader.SetFloat("Fetch", _fetch);
-        _spectrumComputeShader.SetFloat("PeakEnhancementFactor", _peakEnhancementFactor);
-        _spectrumComputeShader.SetFloat("Depth", _depth);
-        _spectrumComputeShader.SetTexture(0, "Noise", _gaussianNoise);
+        _computeShader.SetInt("Size", _size);
+        _computeShader.SetInt("LengthScale", _lengthScale);
+        _computeShader.SetFloat("WindSpeed", _windSpeed);
+        _computeShader.SetFloat("Fetch", _fetch);
+        _computeShader.SetFloat("PeakEnhancementFactor", _peakEnhancementFactor);
+        _computeShader.SetFloat("Depth", _depth);
+        _computeShader.SetTexture(0, "Noise", _gaussianNoise);
 
         // Bind the RenderTexture to the compute shader
-        _spectrumComputeShader.SetTexture(kernel, "SpectrumMap", renderTexture);
+        _computeShader.SetTexture(kernel, "SpectrumMap", renderTexture);
 
         // Dispatch the compute shader
-        _spectrumComputeShader.Dispatch(kernel, _resolution / 8, _resolution / 8, 1);
+        _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
 
         // Set the texture of the RawImage to the RenderTexture
         _spectrumMapImage.texture = renderTexture;
@@ -81,26 +80,30 @@ public class OceanGenerator : MonoBehaviour
     private void GenerateHightMap()
     {
         // Create a new RenderTexture
-        RenderTexture renderTexture = new RenderTexture(_resolution, _resolution, 24);
+        RenderTexture renderTexture = new RenderTexture(_lengthScale, _lengthScale, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
-        
+    
         // Find kernel
-        int kernel = _hightMapComputeShader.FindKernel("CalculateHeight");
-        
+        int kernel = _computeShader.FindKernel("CalculateHeight");
+    
         // Set constants
-        _hightMapComputeShader.SetInt("Size", _size);
-        _hightMapComputeShader.SetInt("Resolution", _resolution);
-        _hightMapComputeShader.SetTexture(kernel, "SpectrumMap", _spectrumMapImage.texture);
+        _computeShader.SetInt("Size", _size);
+        _computeShader.SetInt("LengthScale", _lengthScale);
+        
+        // Set SpectrumMap texture for CalculateHeight kernel
+        _computeShader.SetTexture(kernel, "SpectrumMap", _spectrumMapImage.texture);
+
         // Bind the RenderTexture to the compute shader
-        _hightMapComputeShader.SetTexture(kernel, "HeightMap", renderTexture);
-        
+        _computeShader.SetTexture(kernel, "HeightMap", renderTexture);
+
         // Dispatch the compute shader
-        _hightMapComputeShader.Dispatch(kernel, _resolution / 8, _resolution / 8, 1);
-        
+        _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
+    
         // Set the texture of the RawImage to the RenderTexture
         _hightMapImage.texture = renderTexture;
     }
+
 
     private void GeneratePlane(int size, int resolution)
     {
