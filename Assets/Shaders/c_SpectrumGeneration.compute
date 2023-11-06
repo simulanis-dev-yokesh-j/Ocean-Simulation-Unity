@@ -4,68 +4,66 @@
 #define PI 3.14159265359
 #define G 9.81
 
-// Inputs
+// ====== Inputs ======
 uint Size; // M and N
 uint LengthScale;
+float Depth; // this should be surface's height map
+
+//Spectrum settings
 float WindSpeed;
 float Fetch;
-float PeakEnhancementFactor;
-float Depth; // later we would want to use texture for this.
+float PeekEnhancementFactor;
+
+// Gaussian noise
 Texture2D<float2> Noise;
 
-// Outputs
-RWTexture2D<float3> SpectrumMap;
-RWTexture2D<float3> HeightMap;
+// ====== Outputs ======
+RWTexture2D<float4> SpectrumMap;
+RWTexture2D<float4> HeightMap;
 
-float JONSWAP(float angularFrequency)
+float GetAlpha()
 {
-    float alpha = 0.076 * pow(pow(WindSpeed, 2) / (Fetch * G), 0.22); 
-    float peakFrequency = 22 * (pow(G, 2) / (WindSpeed * Fetch));
-    float sigma = angularFrequency <= peakFrequency ? 0.07 : 0.09;
-
-    float r_1 = 2 * sigma * sigma * peakFrequency * peakFrequency;
-    float r_2 = (angularFrequency - peakFrequency) * (angularFrequency - peakFrequency);
-    float r = exp(-r_1 / r_2);
-
-    return alpha * G * G / pow(angularFrequency, 5)
-                 * exp(-1.25 * pow(peakFrequency / angularFrequency, 4))
-                 * pow(PeakEnhancementFactor, r); 
+    float nominator = WindSpeed * WindSpeed;
+    float denominator = G * Fetch;
+    return 0.076f * pow(abs(nominator / denominator), 0.22f);
 }
 
-float DepthAttenuation(float angularFrequency, float waterDepth)
+float GetPeekDispertion()
 {
-    // depthAdjustedAngularFrequency
-    float w_h = angularFrequency * sqrt(waterDepth/G);
+    float nominator = G * G;
+    float denominator = WindSpeed * Fetch;
+    return 22 * pow(abs(nominator / denominator), 0.333f);
+}
+
+float JONSWAP(float dispertion)
+{
+    float peekDispertion = GetPeekDispertion();
+    float sigma = dispertion <= peekDispertion ? 0.07 : 0.09;
+    float rNominator = (dispertion - peekDispertion) * (dispertion - peekDispertion);
+    float rDenominator = 2 * sigma * sigma * peekDispertion * peekDispertion;
+    float r = exp(-rNominator / rDenominator);
     
-    if(w_h <= 1)
-        return 0.5 * angularFrequency * w_h * w_h;
-    
-    if(w_h <= 2)
-        return 0.5 * angularFrequency * w_h * w_h * (2 - w_h);
+    float firstPart = GetAlpha() * G * G / pow(dispertion, 5);
+    float secondPart = exp(-1.25 * pow(peekDispertion / dispertion, 4));
+    float thirdPart = pow(abs(PeekEnhancementFactor), r);
 
-    // clamp to 1
-    return 1;
+    return firstPart * secondPart * thirdPart;
 }
 
-float TMA(float angularFrequency, float waterDepth)
+float WaveDispertion(float kLength)
 {
-    return JONSWAP(angularFrequency) * DepthAttenuation(angularFrequency, waterDepth);
+    return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
 }
 
-float WaveDispertion(float kMag)
-{
-    return sqrt(G * kMag * tanh(min(kMag * Depth, 15)));
-}
-
-float WaveAmplitude(float2 pos, float2 k)
+float FourierWaveAmplitude(float2 pos, float2 k)
 {
     float kMagnetude = length(k);
-    float angularFrequency = WaveDispertion(kMagnetude);
+    float dispertion = WaveDispertion(kMagnetude);
 
     float rand1 = Noise[pos.xy].x;
     float rand2 = Noise[pos.xy].y;
 
-    return 1 / sqrt(2) * (rand1 + rand2) * sqrt(TMA(angularFrequency, Depth));
+    return 1 / sqrt(2) * (rand1 + rand2) * sqrt(JONSWAP(dispertion));
 }
 
 float2 WaveVector(float2 pos)
@@ -76,34 +74,65 @@ float2 WaveVector(float2 pos)
     return float2(k_x, k_z);
 }
 
+// float2 WaveVector(float2 pos)
+// {
+//     float deltaK = 2 * PI / LengthScale;
+//     int nx = id.x - Size / 2;
+//     int nz = id.y - Size / 2;
+//     return  float2(nx, nz) * deltaK;
+// }
+
+float2 EulerFormula(float x)
+{
+    return float2(cos(x), sin(x));
+}
+
+float2 ComplexMult(float2 a, float2 b)
+{
+    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
 [numthreads(8,8,1)]
 void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
 {
-    // offset to center
     float2 k = WaveVector(id.xy);
-    float amplitude = WaveAmplitude(id.xy, k);
+
+    // init
+    float h_0 = FourierWaveAmplitude(id.xy, k);
+    //float h_1 = FourierWaveAmplitude(id.xy, -k);
     
-    SpectrumMap[id.xy] = float3(amplitude, 0, 0);
+    // real time
+    // float t = 1;
+    // float2 dispertion = WaveDispertion(length(k));
+    // float2 exponent_0 = EulerFormula(dispertion * t);
+    // float2 exponent_1 = EulerFormula(-dispertion * t);
+    //
+    // float2 firstPart = ComplexMult(h_0, exponent_0);
+    // float2 secondPart = ComplexMult(h_1, exponent_1);
+    // float2 h = firstPart + secondPart;
+
+    SpectrumMap[id.xy] = float4(h_0, k.x, k.y, 1);
 }
 
 [numthreads(8,8,1)]
 void CalculateHeight (uint3 id : SV_DispatchThreadID)
 {
-    // float sum = 0;
-    // float n = Size / 2;
-    // float2 pos = float2((id.x - n)*LengthScale/Size, (id.y - n)*LengthScale/Size);
-    // //
-    // // sum up every frequency from spectrum for each heightmap pixel
-    // for(int x = 0; x < Size; x++)
-    // {
-    //     for (int y = 0; y < Size; y++)
-    //     {
-    //         float2 k = WaveVector(float2(x,y));
-    //         float2 uv = float2(x / (float)Size, y / (float)Size);
-    //         
-    //         sum += SpectrumMap[uv].r * exp(dot(k, pos));
-    //     }
-    // }
+    float sum = 0;
+
+    float n = Size / 2;
+    float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
+
+    for (int x = 0; x < Size; x++)
+    {
+        for (int y = 0; y < Size; y++)
+        {
+            float2 spectrumPos = float2(x, y);
+            float2 k = SpectrumMap[spectrumPos].yz;
+            float h = SpectrumMap[spectrumPos].x;
+            
+            sum += h * exp(dot(k, pos));
+        }
+    }
     
-    HeightMap[id.xy] = float3(id.x, 0, 0);
+    HeightMap[id.xy] = float4(sum, 0, 0, 1);
 }

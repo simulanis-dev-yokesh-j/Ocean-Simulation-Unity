@@ -13,7 +13,7 @@ public class OceanGenerator : MonoBehaviour
     //[SerializeField] private ComputeShader _hightMapComputeShader;
     [SerializeField] private RawImage _hightMapImage;
 
-    [Header("Spectrum Parameters")] 
+    [Header("Spectrum Parameters")]
     [SerializeField] private int _size = 512;
     [SerializeField] private int _lengthScale = 1024;
     [SerializeField] private float _windSpeed = 10f;
@@ -51,7 +51,7 @@ public class OceanGenerator : MonoBehaviour
     private void InitSpectrumMap()
     {
         // Create a new RenderTexture
-        RenderTexture renderTexture = new RenderTexture(_lengthScale, _lengthScale, 24);
+        RenderTexture renderTexture = new RenderTexture(_size, _size, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
         
@@ -63,7 +63,7 @@ public class OceanGenerator : MonoBehaviour
         _computeShader.SetInt("LengthScale", _lengthScale);
         _computeShader.SetFloat("WindSpeed", _windSpeed);
         _computeShader.SetFloat("Fetch", _fetch);
-        _computeShader.SetFloat("PeakEnhancementFactor", _peakEnhancementFactor);
+        _computeShader.SetFloat("PeekEnhancementFactor", _peakEnhancementFactor);
         _computeShader.SetFloat("Depth", _depth);
         _computeShader.SetTexture(0, "Noise", _gaussianNoise);
 
@@ -80,7 +80,7 @@ public class OceanGenerator : MonoBehaviour
     private void GenerateHightMap()
     {
         // Create a new RenderTexture
-        RenderTexture renderTexture = new RenderTexture(_lengthScale, _lengthScale, 24);
+        RenderTexture renderTexture = new RenderTexture(_size, _size, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
     
