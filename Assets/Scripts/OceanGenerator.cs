@@ -17,8 +17,9 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private int _size = 512;
     [SerializeField] private int _lengthScale = 1024;
     [SerializeField] private float _windSpeed = 10f;
-    [SerializeField] private float _fetch = 1000f;
-    [SerializeField] private float _peakEnhancementFactor = 3.3f;
+    [SerializeField] private Vector2 _windDirection = new Vector2(1, 1);
+    //[SerializeField] private float _fetch = 1000f;
+    //[SerializeField] private float _peakEnhancementFactor = 3.3f;
     [SerializeField] private float _depth = 1000f;
     
     private MeshFilter _meshFilter;
@@ -62,8 +63,9 @@ public class OceanGenerator : MonoBehaviour
         _computeShader.SetInt("Size", _size);
         _computeShader.SetInt("LengthScale", _lengthScale);
         _computeShader.SetFloat("WindSpeed", _windSpeed);
-        _computeShader.SetFloat("Fetch", _fetch);
-        _computeShader.SetFloat("PeekEnhancementFactor", _peakEnhancementFactor);
+        _computeShader.SetVector("WindDirection", _windDirection.normalized);
+        // _computeShader.SetFloat("Fetch", _fetch);
+        // _computeShader.SetFloat("PeekEnhancementFactor", _peakEnhancementFactor);
         _computeShader.SetFloat("Depth", _depth);
         _computeShader.SetTexture(0, "Noise", _gaussianNoise);
 

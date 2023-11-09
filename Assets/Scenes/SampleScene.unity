@@ -180,7 +180,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: JONSWAP Spectrum + k
+  m_text: Phillips Spectrum
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -839,10 +839,9 @@ MonoBehaviour:
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
   _size: 256
-  _lengthScale: 100
+  _lengthScale: 1024
   _windSpeed: 31
-  _fetch: 1000
-  _peakEnhancementFactor: 3.3
+  _windDirection: {x: 1, y: 1}
   _depth: 1000
 --- !u!1 &545947627
 GameObject:

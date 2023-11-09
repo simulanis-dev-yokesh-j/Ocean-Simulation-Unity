@@ -7,12 +7,11 @@
 // ====== Inputs ======
 uint Size; // M and N
 uint LengthScale;
-float Depth; // this should be surface's height map
 
 //Spectrum settings
 float WindSpeed;
-float Fetch;
-float PeekEnhancementFactor;
+float2 WindDirection;
+float Depth;
 
 // Gaussian noise
 Texture2D<float2> Noise;
@@ -21,33 +20,48 @@ Texture2D<float2> Noise;
 RWTexture2D<float4> SpectrumMap;
 RWTexture2D<float4> HeightMap;
 
-float GetAlpha()
-{
-    float nominator = WindSpeed * WindSpeed;
-    float denominator = G * Fetch;
-    return 0.076f * pow(abs(nominator / denominator), 0.22f);
-}
+// float GetAlpha()
+// {
+//     float nominator = WindSpeed * WindSpeed;
+//     float denominator = G * Fetch;
+//     return 0.076f * pow(abs(nominator / denominator), 0.22f);
+// }
 
-float GetPeekDispertion()
-{
-    float nominator = G * G;
-    float denominator = WindSpeed * Fetch;
-    return 22 * pow(abs(nominator / denominator), 0.333f);
-}
+// float GetPeekDispertion()
+// {
+//     float nominator = G * G;
+//     float denominator = WindSpeed * Fetch;
+//     return 22 * pow(abs(nominator / denominator), 0.333f);
+// }
 
-float JONSWAP(float dispertion)
+// float JONSWAP(float dispertion)
+// {
+//     float peekDispertion = GetPeekDispertion();
+//     float sigma = dispertion <= peekDispertion ? 0.07 : 0.09;
+//     float rNominator = (dispertion - peekDispertion) * (dispertion - peekDispertion);
+//     float rDenominator = 2 * sigma * sigma * peekDispertion * peekDispertion;
+//     float r = exp(-rNominator / rDenominator);
+//     
+//     float firstPart = GetAlpha() * G * G / pow(dispertion, 5);
+//     float secondPart = exp(-1.25 * pow(peekDispertion / dispertion, 4));
+//     float thirdPart = pow(abs(PeekEnhancementFactor), r);
+//
+//     return firstPart * secondPart * thirdPart;
+// }
+
+float PhillipsSpectrum(float2 waveVector)
 {
-    float peekDispertion = GetPeekDispertion();
-    float sigma = dispertion <= peekDispertion ? 0.07 : 0.09;
-    float rNominator = (dispertion - peekDispertion) * (dispertion - peekDispertion);
-    float rDenominator = 2 * sigma * sigma * peekDispertion * peekDispertion;
-    float r = exp(-rNominator / rDenominator);
+    float A = 0.6858;
+    float L = WindSpeed * WindSpeed / G;
     
-    float firstPart = GetAlpha() * G * G / pow(dispertion, 5);
-    float secondPart = exp(-1.25 * pow(peekDispertion / dispertion, 4));
-    float thirdPart = pow(abs(PeekEnhancementFactor), r);
+    float kLength = length(waveVector);
+    float dominator = exp(-1 / pow(kLength*L, 2));
+    float nominator = kLength * kLength * kLength * kLength;
+    float lastPart = dot(waveVector, WindDirection);
+    float surpression = exp(-pow(kLength * 0.001f, 2));
 
-    return firstPart * secondPart * thirdPart;
+    return A * exp(dominator / nominator) * (lastPart * lastPart) * surpression;
+    
 }
 
 float WaveDispertion(float kLength)
@@ -57,13 +71,13 @@ float WaveDispertion(float kLength)
 
 float FourierWaveAmplitude(float2 pos, float2 k)
 {
-    float kMagnetude = length(k);
-    float dispertion = WaveDispertion(kMagnetude);
+    //float kMagnetude = length(k);
+    //float dispertion = WaveDispertion(kMagnetude);
 
     float rand1 = Noise[pos.xy].x;
     float rand2 = Noise[pos.xy].y;
 
-    return 1 / sqrt(2) * (rand1 + rand2) * sqrt(JONSWAP(dispertion));
+    return 1 / sqrt(2) * (rand1 + rand2) * sqrt(PhillipsSpectrum(k));
 }
 
 float2 WaveVector(float2 pos)
@@ -89,7 +103,10 @@ float2 EulerFormula(float x)
 
 float2 ComplexMult(float2 a, float2 b)
 {
-    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+    float2 result;
+    result.x = a.x * b.x - a.y * b.y;
+    result.y = a.x * b.y + a.y * b.x;
+    return result;
 }
 
 [numthreads(8,8,1)]
@@ -99,19 +116,20 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
 
     // init
     float h_0 = FourierWaveAmplitude(id.xy, k);
-    //float h_1 = FourierWaveAmplitude(id.xy, -k);
+    float h_1 = FourierWaveAmplitude(id.xy, -k);
     
     // real time
-    // float t = 1;
-    // float2 dispertion = WaveDispertion(length(k));
-    // float2 exponent_0 = EulerFormula(dispertion * t);
-    // float2 exponent_1 = EulerFormula(-dispertion * t);
-    //
+    float t = 3;
+    float dispertion = WaveDispertion(length(k));
+    float phase = dispertion * t;
+    float2 exponent_0 = EulerFormula(phase);
+    float2 exponent_1 = EulerFormula(-phase);
+    
     // float2 firstPart = ComplexMult(h_0, exponent_0);
     // float2 secondPart = ComplexMult(h_1, exponent_1);
     // float2 h = firstPart + secondPart;
 
-    SpectrumMap[id.xy] = float4(h_0, k.x, k.y, 1);
+    SpectrumMap[id.xy] = float4(exponent_0.x, exponent_0.y, 0, 1);
 }
 
 [numthreads(8,8,1)]
