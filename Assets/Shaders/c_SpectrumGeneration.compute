@@ -1,4 +1,5 @@
 #pragma kernel CalculateSpectrum
+#pragma kernel CalculateConjugateSpectrum
 #pragma kernel CalculateHeight
 
 #define PI 3.14159265359
@@ -14,56 +15,34 @@ float2 WindDirection;
 float Depth;
 
 // Gaussian noise
-Texture2D<float2> Noise;
+Texture2D Noise;
 
 // ====== Outputs ======
 RWTexture2D<float4> SpectrumMap;
 RWTexture2D<float4> HeightMap;
 
-// float GetAlpha()
-// {
-//     float nominator = WindSpeed * WindSpeed;
-//     float denominator = G * Fetch;
-//     return 0.076f * pow(abs(nominator / denominator), 0.22f);
-// }
-
-// float GetPeekDispertion()
-// {
-//     float nominator = G * G;
-//     float denominator = WindSpeed * Fetch;
-//     return 22 * pow(abs(nominator / denominator), 0.333f);
-// }
-
-// float JONSWAP(float dispertion)
-// {
-//     float peekDispertion = GetPeekDispertion();
-//     float sigma = dispertion <= peekDispertion ? 0.07 : 0.09;
-//     float rNominator = (dispertion - peekDispertion) * (dispertion - peekDispertion);
-//     float rDenominator = 2 * sigma * sigma * peekDispertion * peekDispertion;
-//     float r = exp(-rNominator / rDenominator);
-//     
-//     float firstPart = GetAlpha() * G * G / pow(dispertion, 5);
-//     float secondPart = exp(-1.25 * pow(peekDispertion / dispertion, 4));
-//     float thirdPart = pow(abs(PeekEnhancementFactor), r);
-//
-//     return firstPart * secondPart * thirdPart;
-// }
 
 float PhillipsSpectrum(float2 waveVector)
 {
     float A = 0.6858;
     float L = WindSpeed * WindSpeed / G;
-    float damping = 0.001;
-    float l2 = L * L * damping * damping;
+    float l = L / 2000;
     
     float kLength = length(waveVector);
+
+    if(kLength == 0)
+    {
+        waveVector = float2(0.0001, 0.0001);
+        kLength = length(waveVector);
+    }
+    
     float dominator = exp(-1 / (kLength * kLength * L * L));
     float nominator = kLength * kLength * kLength * kLength;
-    float k_dot_w = dot(waveVector, WindDirection);
-    float surpression = exp(-(kLength * kLength) * l2);
-
-    return A * dominator / nominator * (k_dot_w * k_dot_w) * surpression;
+    float k_dot_w = dot(normalize(waveVector), WindDirection);
+    float surpression = exp(-kLength * kLength * l * l);
+    float result = A * dominator / nominator * (k_dot_w * k_dot_w) * surpression; 
     
+    return clamp(result, -6500, 6500);
 }
 
 float WaveDispertion(float kLength)
@@ -74,10 +53,14 @@ float WaveDispertion(float kLength)
 
 float2 FourierWaveAmplitude(float2 pos, float2 k)
 {
-    //float kMagnetude = length(k);
-    //float dispertion = WaveDispertion(kMagnetude);
-    
     float2 rand = float2(Noise[pos.xy].x, Noise[pos.xy].y);
+
+    return 1 / sqrt(2) * rand * sqrt(PhillipsSpectrum(k));
+}
+
+float2 FourierWaveAmplitudeConj(float2 pos, float2 k)
+{
+    float2 rand = float2(Noise[pos.xy].z, Noise[pos.xy].w);
 
     return 1 / sqrt(2) * rand * sqrt(PhillipsSpectrum(k));
 }
@@ -88,7 +71,7 @@ float2 WaveVector(float2 pos)
     float k_x = 2 * PI * (pos.x - n) / LengthScale;
     float k_z = 2 * PI * (pos.y - n) / LengthScale;
     
-    return normalize(float2(k_x, k_z));
+    return float2(k_x, k_z);
 }
 
 float2 EulerFormula(float x)
@@ -109,12 +92,12 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
 {
     float2 k = WaveVector(id.xy);
 
-    // init
+    // // init
     float2 h_0 = FourierWaveAmplitude(id.xy, k);
-    float2 h_1 = FourierWaveAmplitude(id.xy, -k);
+    float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k); 
     
     // real time
-    float t = 3;
+    float t = 2.5;
     float dispertion = WaveDispertion(length(k));
     float phase = dispertion * t;
     float2 exponent_0 = EulerFormula(phase);
@@ -123,7 +106,7 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
     float2 firstPart = ComplexMult(h_0, exponent_0);
     float2 secondPart = ComplexMult(h_1, exponent_1);
     float2 h = firstPart + secondPart;
-
+    
     SpectrumMap[id.xy] = float4(h.x, h.y, 0, 1);
 }
 
@@ -131,18 +114,18 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
 void CalculateHeight (uint3 id : SV_DispatchThreadID)
 {
     float2 sum = 0;
-
+    
     float n = Size / 2;
-    float2 pos = normalize(float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size));
-
+    float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
+    
     for (int x = 0; x < Size; x++)
     {
         for (int y = 0; y < Size; y++)
         {
             float2 spectrumPos = float2(x, y);
             float2 h = SpectrumMap[spectrumPos].xy;
-            float2 k = SpectrumMap[spectrumPos].zw;
-
+            float2 k = WaveVector(spectrumPos);
+    
             float2 exponent = EulerFormula(dot(k, pos));
             float2 result = ComplexMult(h, exponent);
             
@@ -150,5 +133,7 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
         }
     }
     
-    HeightMap[id.xy] = float4(sum.x, 0, 0, 1);
+    sum.x = (sum.x + 1250) / 2500;
+    
+    HeightMap[id.xy] = float4(sum.x, sum.x, sum.x, 1);
 }
