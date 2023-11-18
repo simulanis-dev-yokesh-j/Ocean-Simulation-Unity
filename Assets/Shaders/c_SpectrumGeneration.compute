@@ -13,6 +13,7 @@ uint LengthScale;
 float WindSpeed;
 float2 WindDirection;
 float Depth;
+float Time;
 
 // Gaussian noise
 Texture2D Noise;
@@ -42,13 +43,13 @@ float PhillipsSpectrum(float2 waveVector)
     float surpression = exp(-kLength * kLength * l * l);
     float result = A * dominator / nominator * (k_dot_w * k_dot_w) * surpression; 
     
-    return clamp(result, -6500, 6500);
+    return clamp(result, -4000, 4000);
 }
 
 float WaveDispertion(float kLength)
 {
-    //return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
-    return sqrt(G * kLength);
+    return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
+    //return sqrt(G * kLength);
 }
 
 float2 FourierWaveAmplitude(float2 pos, float2 k)
@@ -97,7 +98,7 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
     float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k); 
     
     // real time
-    float t = 2.5;
+    float t = Time;
     float dispertion = WaveDispertion(length(k));
     float phase = dispertion * t;
     float2 exponent_0 = EulerFormula(phase);
@@ -133,7 +134,7 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
         }
     }
     
-    sum.x = (sum.x + 1250) / 2500;
+    sum.x = (sum.x + 1500) / 3000;
     
     HeightMap[id.xy] = float4(sum.x, sum.x, sum.x, 1);
 }

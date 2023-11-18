@@ -840,8 +840,10 @@ MonoBehaviour:
   _computeShader: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732, type: 3}
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
-  _size: 256
-  _lengthScale: 250
+  _time: 0
+  _seed: 10
+  _size: 128
+  _lengthScale: 300
   _windSpeed: 31
   _windDirection: {x: 1, y: 1}
   _depth: 1000
