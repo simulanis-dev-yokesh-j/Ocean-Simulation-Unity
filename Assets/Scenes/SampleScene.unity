@@ -519,7 +519,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &366879251
 RectTransform:
   m_ObjectHideFlags: 0
@@ -840,6 +840,7 @@ MonoBehaviour:
   _computeShader: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732, type: 3}
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
+  _resolution: 128
   _time: 0
   _seed: 10
   _size: 128

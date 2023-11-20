@@ -6,6 +6,20 @@ using Random = UnityEngine.Random;
 
 public class OceanGenerator : MonoBehaviour
 {
+    [System.Serializable]
+    public struct OceanRenderData
+    {
+        public int InitSpectrumKernel;
+        public RenderTexture InitSpectrum;
+        public int FrequencyDomainKernel;
+        public RenderTexture FrequencyDomain;
+        public int HeightMapKernel;
+        public RenderTexture HeightMap;
+        public RenderTexture NormalMap;
+        public RenderTexture WaveData;
+        public Texture2D GaussianNoise;
+    }
+
     [Header("References")]
     [SerializeField] private GameObject _ocean;
     [SerializeField] private Material _material;
@@ -13,6 +27,9 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private RawImage _spectrumMapImage;
     [SerializeField] private RawImage _hightMapImage;
 
+    [Header("Geometry Parameters")]
+    [SerializeField] private int _resolution = 256;
+    
     [Header("Spectrum Parameters")]
     [SerializeField] private float _time = 0f;
     [SerializeField] private int _seed = 10;
@@ -23,96 +40,117 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private float _depth = 1000f;
     
     // Outputs
-    RenderTexture _spectrumMap;
-    RenderTexture _heightMap;
+    private OceanRenderData _oceanData;  
     
+    // Other var
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
-    private Texture2D _gaussianNoise;
 
     private void Start()
     {
-        // _meshFilter = _ocean.AddComponent<MeshFilter>();
-        // _meshRenderer = _ocean.AddComponent<MeshRenderer>();
-        //
-        // GeneratePlane(_size, _resolution);
-        // _meshRenderer.material = _material;
+        _meshFilter = _ocean.AddComponent<MeshFilter>();
+        _meshRenderer = _ocean.AddComponent<MeshRenderer>();
         
-        InitComputeShaders();
+        GeneratePlane(_size, _resolution);
+        _meshRenderer.material = _material;
+        
+        InitRenderTextures();
+        GenerateInitSpectrum();
+        _material.SetTexture("_HeightMap", _oceanData.HeightMap);
+        _material.SetTexture("_NormalMap", _oceanData.NormalMap);
     }
 
-    // private void OnValidate()
-    // {
-    //     if(Application.isPlaying == false)
-    //         return;
-    //     
-    //     InitComputeShaders();
-    // }
-
-    private void InitComputeShaders()
+    private void OnValidate()
     {
-        _gaussianNoise = GenerateGaussianNoise(_size);
+        if(Application.isPlaying == false)
+            return;
         
-        // Create new RenderTextures
-        _spectrumMap = CreateRenderTexture(_size, _size);
-        _heightMap = CreateRenderTexture(_size, _size);
-        
-        InitSpectrumMap();
-        UpdateHeightMap();
+        InitRenderTextures();
+        GenerateInitSpectrum();
+        _material.SetTexture("_HeightMap", _oceanData.HeightMap);
+        _material.SetTexture("_NormalMap", _oceanData.NormalMap);
     }
-
+    
     private void Update()
     {
         _time += Time.deltaTime;
-        InitSpectrumMap();
-        UpdateHeightMap();
+        GenerateFrequencyDomain();
+        GenerateHeightMap();
+        
+    }
+    
+    private void InitRenderTextures()
+    {
+        _oceanData.InitSpectrumKernel = _computeShader.FindKernel("CalculateInitSpectrum");
+        _oceanData.InitSpectrum = CreateRenderTexture(_size, _size);
+        _oceanData.FrequencyDomainKernel = _computeShader.FindKernel("CalculateFrequencyDomain");
+        _oceanData.FrequencyDomain = CreateRenderTexture(_size, _size);
+        _oceanData.HeightMapKernel = _computeShader.FindKernel("CalculateHeight");
+        _oceanData.HeightMap = CreateRenderTexture(_size, _size);
+        _oceanData.NormalMap = CreateRenderTexture(_size, _size);
+        _oceanData.WaveData = CreateRenderTexture(_size, _size);
+        _oceanData.GaussianNoise = GenerateGaussianNoise(_size);
     }
 
-    private void InitSpectrumMap()
+    private void GenerateInitSpectrum()
     {
-        // Find kernel
-        int kernel = _computeShader.FindKernel("CalculateSpectrum");
+        RenderTexture initSpectrum = _oceanData.InitSpectrum;
+        int kernel = _oceanData.InitSpectrumKernel;
         
-        // Set constants
-        _computeShader.SetFloat("Time", _time);
+        // Set variables
         _computeShader.SetInt("Size", _size);
         _computeShader.SetInt("LengthScale", _lengthScale);
         _computeShader.SetFloat("WindSpeed", _windSpeed);
         _computeShader.SetVector("WindDirection", _windDirection.normalized);
         _computeShader.SetFloat("Depth", _depth);
-        _computeShader.SetTexture(0, "Noise", _gaussianNoise);
+        _computeShader.SetTexture(0, "Noise", _oceanData.GaussianNoise);
+        _computeShader.SetTexture(kernel, "InitSpectrum", initSpectrum);
+        _computeShader.SetTexture(kernel, "WaveData", _oceanData.WaveData);
 
-        // Bind the RenderTexture to the compute shader
-        _computeShader.SetTexture(kernel, "SpectrumMap", _spectrumMap);
+        // Dispatch the compute shader
+        _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
+    }
+
+    private void GenerateFrequencyDomain()
+    {
+        int kernel = _oceanData.FrequencyDomainKernel;
+        
+        // Set variables
+        _computeShader.SetFloat("Time", _time);
+        _computeShader.SetTexture(kernel, "InitSpectrum", _oceanData.InitSpectrum);
+        _computeShader.SetTexture(kernel, "WaveData", _oceanData.WaveData);
+        _computeShader.SetTexture(kernel, "FrequencyDomain", _oceanData.FrequencyDomain);
 
         // Dispatch the compute shader
         _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
         
-        _spectrumMapImage.texture = _spectrumMap;
+        // show image
+        _spectrumMapImage.texture = _oceanData.FrequencyDomain;
     }
     
-    private void UpdateHeightMap()
+    private void GenerateHeightMap()
     {
         // Find kernel
-        int kernel = _computeShader.FindKernel("CalculateHeight");
+        int kernel = _oceanData.HeightMapKernel;
         
         // Set constants
         _computeShader.SetInt("Size", _size);
         _computeShader.SetInt("LengthScale", _lengthScale);
-        _computeShader.SetTexture(kernel, "SpectrumMap", _spectrumMap);
-        
-        // Bind the RenderTexture to the compute shader
-        _computeShader.SetTexture(kernel, "HeightMap", _heightMap);
+        _computeShader.SetTexture(kernel, "FrequencyDomain", _oceanData.FrequencyDomain);
+        _computeShader.SetTexture(kernel, "WaveData", _oceanData.WaveData);
+        _computeShader.SetTexture(kernel, "HeightMap", _oceanData.HeightMap);
+        _computeShader.SetTexture(kernel, "NormalMap", _oceanData.NormalMap);
         
         // Dispatch the compute shader
         _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
         
-        _hightMapImage.texture = _heightMap;
+        _hightMapImage.texture = _oceanData.HeightMap;
     }
 
     private void GeneratePlane(int size, int resolution)
     {
         Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
+        Vector2[] uvs = new Vector2[vertices.Length];
         int[] triangles = new int[resolution * resolution * 6];
 
         float increment = 1f / resolution;
@@ -125,6 +163,8 @@ public class OceanGenerator : MonoBehaviour
             for (int x = 0; x <= resolution; x++)
             {
                 vertices[vertIndex] = new Vector3(size * (x * increment - .5f), 0, size * (y * increment - .5f));
+                uvs[vertIndex] = new Vector2(x * increment, y * increment);
+                
                 if (x != resolution && y != resolution)
                 {
                     triangles[triIndex] = vertIndex;
@@ -145,11 +185,13 @@ public class OceanGenerator : MonoBehaviour
         Mesh mesh = new Mesh();
         mesh.name = "Ocean Mesh";
         mesh.vertices = vertices;
+        mesh.uv = uvs;
         mesh.triangles = triangles;
 
         //Assign mesh to mesh filter
         _meshFilter.mesh = mesh;
     }
+
 
     private RenderTexture CreateRenderTexture(int width, int height)
     {
@@ -256,6 +298,4 @@ public class OceanGenerator : MonoBehaviour
         print($"Lowest Y: {lowestY.x} at ({lowestY.y}, {lowestY.z})");
         print($"Highest Y: {highestY.x} at ({highestY.y}, {highestY.z})");
     }
-
-
 }

@@ -1,5 +1,5 @@
-#pragma kernel CalculateSpectrum
-#pragma kernel CalculateConjugateSpectrum
+#pragma kernel CalculateInitSpectrum
+#pragma kernel CalculateFrequencyDomain
 #pragma kernel CalculateHeight
 
 #define PI 3.14159265359
@@ -19,8 +19,11 @@ float Time;
 Texture2D Noise;
 
 // ====== Outputs ======
-RWTexture2D<float4> SpectrumMap;
+RWTexture2D<float4> InitSpectrum;
+RWTexture2D<float4> FrequencyDomain;
+RWTexture2D<float4> WaveData;
 RWTexture2D<float4> HeightMap;
+RWTexture2D<float4> NormalMap;
 
 
 float PhillipsSpectrum(float2 waveVector)
@@ -89,18 +92,28 @@ float2 ComplexMult(float2 a, float2 b)
 }
 
 [numthreads(8,8,1)]
-void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
+void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
 {
     float2 k = WaveVector(id.xy);
-
-    // // init
+    float kLength = length(k);
+    float dispertion = WaveDispertion(kLength);
+    
     float2 h_0 = FourierWaveAmplitude(id.xy, k);
     float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k); 
     
+    InitSpectrum[id.xy] = float4(h_0.x, h_0.y, h_1.x, h_1.y);
+    WaveData[id.xy] = float4(k.x, k.y, dispertion, 1);
+}
+
+[numthreads(8,8,1)]
+void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
+{
+    float2 h_0 = InitSpectrum[id.xy].xy;
+    float2 h_1 = InitSpectrum[id.xy].zw;
+    float dispertion = WaveData[id.xy].z;
+    
     // real time
-    float t = Time;
-    float dispertion = WaveDispertion(length(k));
-    float phase = dispertion * t;
+    float phase = dispertion * Time;
     float2 exponent_0 = EulerFormula(phase);
     float2 exponent_1 = EulerFormula(-phase);
     
@@ -108,13 +121,14 @@ void CalculateSpectrum (uint3 id : SV_DispatchThreadID)
     float2 secondPart = ComplexMult(h_1, exponent_1);
     float2 h = firstPart + secondPart;
     
-    SpectrumMap[id.xy] = float4(h.x, h.y, 0, 1);
+    FrequencyDomain[id.xy] = float4(h.x, h.y, 0, 1);
 }
 
 [numthreads(8,8,1)]
 void CalculateHeight (uint3 id : SV_DispatchThreadID)
 {
-    float2 sum = 0;
+    float2 heightSum = 0;
+    float2 normalSum = 0;
     
     float n = Size / 2;
     float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
@@ -123,18 +137,22 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
     {
         for (int y = 0; y < Size; y++)
         {
-            float2 spectrumPos = float2(x, y);
-            float2 h = SpectrumMap[spectrumPos].xy;
-            float2 k = WaveVector(spectrumPos);
+            float2 frequencyPos = float2(x, y);
+            float2 h = FrequencyDomain[frequencyPos].xy;
+            float2 k =  WaveData[frequencyPos].xy;
     
             float2 exponent = EulerFormula(dot(k, pos));
             float2 result = ComplexMult(h, exponent);
             
-            sum += result;
+            heightSum += result;
+            normalSum += ComplexMult(float2(-k.y, k.x), result);
         }
     }
     
-    sum.x = (sum.x + 1500) / 3000;
+    heightSum.x = (heightSum.x + 1500) / 3000;
+    normalSum.x = ((normalSum.x - (-500)) / (500 - (-500)) - 0.5f) * 2;
+    normalSum.y = ((normalSum.y - (-500)) / (500 - (-500)) - 0.5f) * 2;
     
-    HeightMap[id.xy] = float4(sum.x, sum.x, sum.x, 1);
+    HeightMap[id.xy] = float4(heightSum.x, heightSum.x, heightSum.x, 1);
+    NormalMap[id.xy] = float4(normalSum.x, normalSum.y, 0, 1);
 }

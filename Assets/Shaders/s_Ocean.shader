@@ -2,7 +2,8 @@ Shader "Unlit/Ocean"
 {
     Properties
     {
-        
+        _HeightMap("Height Map", 2D) = "white" {}
+        _NormalMap("Normal Map", 2D) = "bump" {}
     }
     SubShader
     {
@@ -16,6 +17,9 @@ Shader "Unlit/Ocean"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
+
+            sampler2D_half _HeightMap;
+            sampler2D_half _NormalMap;
 
             struct appdata
             {
@@ -33,13 +37,19 @@ Shader "Unlit/Ocean"
             v2f vert (appdata v)
             {
                 v2f o;
+                float4 texel = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
+                float height = texel.r;
+                v.vertex.y = height * 3;
                 o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
-                return float4(1, 1, 1, 1);
+                float4 normalColor = tex2D(_NormalMap, i.uv);
+                return normalColor;
+                // return float4(1, 1, 1, 1);
             }
             ENDCG
         }
