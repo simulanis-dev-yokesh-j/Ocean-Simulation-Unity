@@ -48,8 +48,8 @@ Shader "Unlit/Ocean"
             fixed4 frag (v2f i) : SV_Target
             {
                 float4 normalColor = tex2D(_NormalMap, i.uv);
+                normalColor = normalColor * 0.5 + 0.5; // Transform from [-1, 1] to [0, 1]
                 return normalColor;
-                // return float4(1, 1, 1, 1);
             }
             ENDCG
         }
