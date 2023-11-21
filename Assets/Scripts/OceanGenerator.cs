@@ -56,6 +56,9 @@ public class OceanGenerator : MonoBehaviour
         
         InitRenderTextures();
         GenerateInitSpectrum();
+        _time = 2;
+        GenerateFrequencyDomain();
+        GenerateHeightMap();
         _material.SetTexture("_HeightMap", _oceanData.HeightMap);
         _material.SetTexture("_NormalMap", _oceanData.NormalMap);
     }
@@ -76,7 +79,6 @@ public class OceanGenerator : MonoBehaviour
         _time += Time.deltaTime;
         GenerateFrequencyDomain();
         GenerateHeightMap();
-        
     }
     
     private void InitRenderTextures()
@@ -145,6 +147,7 @@ public class OceanGenerator : MonoBehaviour
         _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
         
         _hightMapImage.texture = _oceanData.HeightMap;
+        //PrintSpectrumTexture(_oceanData.HeightMap);
     }
 
     private void GeneratePlane(int size, int resolution)

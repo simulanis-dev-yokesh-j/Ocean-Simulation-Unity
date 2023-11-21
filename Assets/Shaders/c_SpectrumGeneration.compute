@@ -28,17 +28,14 @@ RWTexture2D<float4> NormalMap;
 
 float PhillipsSpectrum(float2 waveVector)
 {
-    float A = 0.6858;
+    float A = 0.6;
     float L = WindSpeed * WindSpeed / G;
     float l = L / 2000;
     
     float kLength = length(waveVector);
 
-    if(kLength == 0)
-    {
-        waveVector = float2(0.0001, 0.0001);
-        kLength = length(waveVector);
-    }
+    if(kLength < 0.0001)
+        return 0;
     
     float dominator = exp(-1 / (kLength * kLength * L * L));
     float nominator = kLength * kLength * kLength * kLength;
@@ -46,7 +43,7 @@ float PhillipsSpectrum(float2 waveVector)
     float surpression = exp(-kLength * kLength * l * l);
     float result = A * dominator / nominator * (k_dot_w * k_dot_w) * surpression; 
     
-    return clamp(result, -4000, 4000);
+    return result;
 }
 
 float WaveDispertion(float kLength)
@@ -150,7 +147,7 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
     }
     
     heightSum.x /= 1000;
-    normalSum = normalize(normalSum);
+    normalSum /= 100;
     float3 normal = normalize(float3(-normalSum.x, 1, -normalSum.y));
     
     HeightMap[id.xy] = float4(heightSum.x, heightSum.x, heightSum.x, 1);
