@@ -149,10 +149,10 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
         }
     }
     
-    heightSum.x = (heightSum.x + 1500) / 3000;
-    normalSum.x = ((normalSum.x - (-500)) / (500 - (-500)) - 0.5f) * 2;
-    normalSum.y = ((normalSum.y - (-500)) / (500 - (-500)) - 0.5f) * 2;
+    heightSum.x /= 1000;
+    normalSum = normalize(normalSum);
+    float3 normal = normalize(float3(-normalSum.x, 1, -normalSum.y));
     
     HeightMap[id.xy] = float4(heightSum.x, heightSum.x, heightSum.x, 1);
-    NormalMap[id.xy] = float4(normalSum.x, normalSum.y, 0, 1);
+    NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
 }
