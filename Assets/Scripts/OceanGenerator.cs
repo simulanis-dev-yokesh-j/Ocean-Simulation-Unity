@@ -15,7 +15,6 @@ public class OceanGenerator : MonoBehaviour
         public RenderTexture FrequencyDomain;
         public int HeightMapKernel;
         public RenderTexture HeightMap;
-        public int NormalMapKernel;
         public RenderTexture NormalMap;
         public RenderTexture WaveData;
         public Texture2D GaussianNoise;
@@ -27,6 +26,7 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private ComputeShader _computeShader;
     [SerializeField] private RawImage _spectrumMapImage;
     [SerializeField] private RawImage _hightMapImage;
+    [SerializeField] private RawImage _normalMapImage;
 
     [Header("Geometry Parameters")]
     [SerializeField] private int _resolution = 256;
@@ -82,7 +82,7 @@ public class OceanGenerator : MonoBehaviour
         _time += Time.deltaTime;
         GenerateFrequencyDomain();
         GenerateHeightMap();
-        GenerateNormalMap();
+        //GenerateNormalMap();
     }
     
     private void InitRenderTextures()
@@ -93,7 +93,6 @@ public class OceanGenerator : MonoBehaviour
         _oceanData.FrequencyDomain = CreateRenderTexture(_size, _size);
         _oceanData.HeightMapKernel = _computeShader.FindKernel("CalculateHeight");
         _oceanData.HeightMap = CreateRenderTexture(_size, _size);
-        _oceanData.NormalMapKernel = _computeShader.FindKernel("CalculateNormal");
         _oceanData.NormalMap = CreateRenderTexture(_size, _size);
         _oceanData.WaveData = CreateRenderTexture(_size, _size);
         _oceanData.GaussianNoise = GenerateGaussianNoise(_size);
@@ -147,30 +146,16 @@ public class OceanGenerator : MonoBehaviour
         _computeShader.SetTexture(kernel, "FrequencyDomain", _oceanData.FrequencyDomain);
         _computeShader.SetTexture(kernel, "WaveData", _oceanData.WaveData);
         _computeShader.SetTexture(kernel, "HeightMap", _oceanData.HeightMap);
-        //_computeShader.SetTexture(kernel, "NormalMap", _oceanData.NormalMap);
-        
-        // Dispatch the compute shader
-        _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
-        
-        _hightMapImage.texture = _oceanData.HeightMap;
-        //PrintSpectrumTexture(_oceanData.HeightMap);
-    }
-
-    private void GenerateNormalMap()
-    {
-        int kernel = _oceanData.NormalMapKernel;
-        
-        // Set constants
-        _computeShader.SetInt("Size", _size);
-        _computeShader.SetTexture(kernel, "HeightMap", _oceanData.HeightMap);
         _computeShader.SetTexture(kernel, "NormalMap", _oceanData.NormalMap);
         
         // Dispatch the compute shader
         _computeShader.Dispatch(kernel, _size / 8, _size / 8, 1);
         
-        //PrintSpectrumTexture(_oceanData.NormalMap);
+        _hightMapImage.texture = _oceanData.HeightMap;
+        _normalMapImage.texture = _oceanData.NormalMap;
+        //PrintSpectrumTexture(_oceanData.HeightMap);
     }
-    
+
     private void GeneratePlane(int size, int resolution)
     {
         Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];

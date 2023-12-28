@@ -1,7 +1,6 @@
 #pragma kernel CalculateInitSpectrum
 #pragma kernel CalculateFrequencyDomain
 #pragma kernel CalculateHeight
-#pragma kernel CalculateNormal
 
 #define PI 3.14159265359
 #define G 9.81
@@ -127,7 +126,8 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
 void CalculateHeight (uint3 id : SV_DispatchThreadID)
 {
     float2 heightSum = 0;
-    //float2 normalSum = 0;
+    float2 tanSum = 0;
+    float2 bitanSum = 0;
     
     float n = Size / 2;
     float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
@@ -144,37 +144,12 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
             float2 result = ComplexMult(h, exponent);
             
             heightSum += result;
-            //normalSum += ComplexMult(float2(-k.y, k.x), result);
+            tanSum += ComplexMult(float2(0, k.x), result);
+            bitanSum += ComplexMult(float2(0, k.y), result);
         }
     }
-    
-    //float3 normal = normalize(float3(-normalSum.x, 0.2, -normalSum.y));
+
+    float3 normal = normalize(float3(-tanSum.x, 1, -bitanSum.x));
     HeightMap[id.xy] = float4(heightSum.x, heightSum.x, heightSum.x, 1);
-    //NormalMap[id.xy] = float4(-normal.x, 1, -normal.y, 1);
-}
-
-[numthreads(8,8,1)]
-void CalculateNormal(uint3 id : SV_DispatchThreadID)
-{
-    // get two points from height map and calculate normal
-    float2 pos = float2(id.x, id.y);
-    
-    // Get the next pixel in the x and y directions
-    float2 nextPixelX = pos + float2(1, 0);
-    float2 nextPixelY = pos + float2(0, 1);
-
-    // Sample the heights of the current point and its neighbors
-    float heightC = HeightMap[id.xy].r;
-    float heightX = HeightMap[nextPixelX].r;
-    float heightY = HeightMap[nextPixelY].r;
-
-    // Calculate the gradients in the x and y directions
-    float gradientX = heightX - heightC;
-    float gradientY = heightY - heightC;
-
-    // Calculate the normal
-    float3 normal = normalize(float3(-gradientX, 1, -gradientY));
-
-    // Write the normal to the normal map
-    NormalMap[id.xy] = float4((normal + 1.0) * 0.5, 1);
+    NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
 }
