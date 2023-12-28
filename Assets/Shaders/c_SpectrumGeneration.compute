@@ -42,7 +42,8 @@ float PhillipsSpectrum(float2 waveVector)
     float nominator = kLength * kLength * kLength * kLength;
     float k_dot_w = dot(normalize(waveVector), WindDirection);
     float surpression = exp(-kLength * kLength * l * l);
-    float result = 0.000001 * Amplitude * dominator / nominator * (k_dot_w * k_dot_w) * surpression; 
+    float k_dot_w_6 = k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w;
+    float result = 0.000001 * Amplitude * dominator / nominator * k_dot_w_6 * surpression; 
     
     return result;
 }
