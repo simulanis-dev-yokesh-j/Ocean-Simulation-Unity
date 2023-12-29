@@ -39,6 +39,7 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private float _windSpeed = 10f;
     [SerializeField] private Vector2 _windDirection = new Vector2(1, 1);
     [SerializeField] private float _depth = 1000f;
+    [SerializeField] private float _displacementFactor = 0.8f;
     private float _time = 0f;
     
     // Outputs
@@ -82,7 +83,6 @@ public class OceanGenerator : MonoBehaviour
         _time += Time.deltaTime;
         GenerateFrequencyDomain();
         GenerateHeightMap();
-        //GenerateNormalMap();
     }
     
     private void InitRenderTextures()
@@ -143,6 +143,7 @@ public class OceanGenerator : MonoBehaviour
         // Set constants
         _computeShader.SetInt("Size", _size);
         _computeShader.SetInt("LengthScale", _lengthScale);
+        _computeShader.SetFloat("DisplacementFactor", _displacementFactor);
         _computeShader.SetTexture(kernel, "FrequencyDomain", _oceanData.FrequencyDomain);
         _computeShader.SetTexture(kernel, "WaveData", _oceanData.WaveData);
         _computeShader.SetTexture(kernel, "HeightMap", _oceanData.HeightMap);

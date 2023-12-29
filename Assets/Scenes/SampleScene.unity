@@ -979,12 +979,13 @@ MonoBehaviour:
   _normalMapImage: {fileID: 783113521}
   _resolution: 128
   _seed: 10
-  _size: 256
+  _size: 128
   _lengthScale: 300
   _amplitude: 1.69
   _windSpeed: 31
   _windDirection: {x: 1, y: 1}
   _depth: 1000
+  _displacementFactor: 0
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0
@@ -1000,7 +1001,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &545947628
 Transform:
   m_ObjectHideFlags: 0

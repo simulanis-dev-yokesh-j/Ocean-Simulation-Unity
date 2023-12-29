@@ -48,7 +48,9 @@ Shader "Unlit/Ocean"
             {
                 v2f o;
                 float4 texel = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
-                v.vertex.y = texel.r;
+                v.vertex.x += texel.x;
+                v.vertex.y = texel.y;
+                v.vertex.z += texel.z;
 
                 o.posWorld = mul(unity_ObjectToWorld, v.vertex);
                 o.pos = UnityObjectToClipPos(v.vertex);

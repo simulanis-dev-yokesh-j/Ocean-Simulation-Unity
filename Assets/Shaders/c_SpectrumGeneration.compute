@@ -15,6 +15,7 @@ float WindSpeed;
 float2 WindDirection;
 float Depth;
 float Time;
+float DisplacementFactor;
 
 // Gaussian noise
 Texture2D Noise;
@@ -125,9 +126,11 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void CalculateHeight (uint3 id : SV_DispatchThreadID)
 {
-    float2 heightSum = 0;
-    float2 tanSum = 0;
-    float2 bitanSum = 0;
+    float2 height = 0;
+    float2 tangent = 0;
+    float2 bitangent = 0;
+    float2 vectorFieldX = 0;
+    float2 vectorFieldZ = 0;
     
     float n = Size / 2;
     float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
@@ -139,17 +142,29 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
             float2 frequencyPos = float2(x, y);
             float2 h = FrequencyDomain[frequencyPos].xy;
             float2 k =  WaveData[frequencyPos].xy;
+            float kLength = length(k);
+            float2 k_over_length = 0;
+            
+            if(kLength > 0.0001)
+                k_over_length = k / kLength;
     
             float2 exponent = EulerFormula(dot(k, pos));
             float2 result = ComplexMult(h, exponent);
             
-            heightSum += result;
-            tanSum += ComplexMult(float2(0, k.x), result);
-            bitanSum += ComplexMult(float2(0, k.y), result);
+            height += result;
+            tangent += ComplexMult(float2(0, k.x), result);
+            bitangent += ComplexMult(float2(0, k.y), result);
+            vectorFieldX += ComplexMult(float2(0, -k_over_length.x), result);
+            vectorFieldZ += ComplexMult(float2(0, -k_over_length.y), result);
         }
     }
-
-    float3 normal = normalize(float3(-tanSum.x, 1, -bitanSum.x));
-    HeightMap[id.xy] = float4(heightSum.x, heightSum.x, heightSum.x, 1);
+    
+    vectorFieldX *= -DisplacementFactor;
+    vectorFieldZ *= -DisplacementFactor;
+    
+    //float2 horizontalPos = float2(pos.x + vectorFieldX.x, pos.y + vectorFieldZ.x); 
+    float3 normal = normalize(float3(-tangent.x, 1, -bitangent.x));
+    
+    HeightMap[id.xy] = float4(vectorFieldX.x, height.x, vectorFieldZ.x, 1);
     NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
 }
