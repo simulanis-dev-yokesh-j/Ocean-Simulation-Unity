@@ -69,17 +69,20 @@ public class OceanGenerator : MonoBehaviour
         _material.SetTexture(NormalMapID, _oceanData.NormalMap);
     }
 
-    // private void OnValidate()
-    // {
-    //     if(Application.isPlaying == false)
-    //         return;
-    //     
-    //     InitRenderTextures();
-    //     GenerateInitSpectrum();
-    //
-    //     _material.SetTexture(HeightMapID, _oceanData.HeightMap);
-    //     _material.SetTexture(NormalMapID, _oceanData.NormalMap);
-    // }
+    private void OnValidate()
+    {
+        if(Application.isPlaying == false)
+            return;
+        
+        if(_commandBuffer == null)
+            return;
+        
+        InitRenderTextures();
+        GenerateInitSpectrum();
+    
+        _material.SetTexture(HeightMapID, _oceanData.HeightMap);
+        _material.SetTexture(NormalMapID, _oceanData.NormalMap);
+    }
     
     private void Update()
     {
