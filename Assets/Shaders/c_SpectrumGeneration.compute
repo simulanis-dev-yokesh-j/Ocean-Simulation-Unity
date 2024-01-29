@@ -162,7 +162,6 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
     vectorFieldX *= -DisplacementFactor;
     vectorFieldZ *= -DisplacementFactor;
     
-    //float2 horizontalPos = float2(pos.x + vectorFieldX.x, pos.y + vectorFieldZ.x); 
     float3 normal = normalize(float3(-tangent.x, 1, -bitangent.x));
     
     HeightMap[id.xy] = float4(vectorFieldX.x, height.x, vectorFieldZ.x, 1);

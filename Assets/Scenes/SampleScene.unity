@@ -985,7 +985,7 @@ MonoBehaviour:
   _windSpeed: 31
   _windDirection: {x: 1, y: 1}
   _depth: 1000
-  _displacementFactor: 0
+  _displacementFactor: 0.8
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0
