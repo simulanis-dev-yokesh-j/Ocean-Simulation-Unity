@@ -135,9 +135,9 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
     float n = Size / 2;
     float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
     
-    for (int x = 0; x < Size; x++)
+    for (uint x = 0; x < Size; x++)
     {
-        for (int y = 0; y < Size; y++)
+        for (uint y = 0; y < Size; y++)
         {
             float2 frequencyPos = float2(x, y);
             float2 h = FrequencyDomain[frequencyPos].xy;

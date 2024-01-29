@@ -981,7 +981,7 @@ MonoBehaviour:
   _seed: 10
   _size: 128
   _lengthScale: 300
-  _amplitude: 1.69
+  _amplitude: 1.61
   _windSpeed: 31
   _windDirection: {x: 1, y: 1}
   _depth: 1000
