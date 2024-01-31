@@ -979,13 +979,14 @@ MonoBehaviour:
   _normalMapImage: {fileID: 783113521}
   _resolution: 128
   _seed: 10
-  _size: 128
-  _lengthScale: 300
-  _amplitude: 1.61
+  _size: 512
+  _lengthScale: 1000
+  _amplitude: 100
   _windSpeed: 31
   _windDirection: {x: 1, y: 1}
   _depth: 1000
   _displacementFactor: 0.8
+  _fftComputeShader: {fileID: 7200000, guid: bcbec7cd397924dde820e0aa2e434ec2, type: 3}
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0

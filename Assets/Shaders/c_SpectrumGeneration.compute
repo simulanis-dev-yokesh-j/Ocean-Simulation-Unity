@@ -1,6 +1,7 @@
 #pragma kernel CalculateInitSpectrum
 #pragma kernel CalculateFrequencyDomain
 #pragma kernel CalculateHeight
+#pragma kernel PermuteHeightMap
 
 #define PI 3.14159265359
 #define G 9.81
@@ -22,7 +23,7 @@ Texture2D Noise;
 
 // ====== Outputs ======
 RWTexture2D<float4> InitSpectrum;
-RWTexture2D<float4> FrequencyDomain;
+RWTexture2D<float2> FrequencyDomain;
 RWTexture2D<float4> WaveData;
 RWTexture2D<float4> HeightMap;
 RWTexture2D<float4> NormalMap;
@@ -43,7 +44,7 @@ float PhillipsSpectrum(float2 waveVector)
     float k_dot_w = dot(normalize(waveVector), WindDirection);
     float surpression = exp(-kLength * kLength * l * l);
     float k_dot_w_6 = k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w;
-    float result = 0.000001 * Amplitude * dominator / nominator * k_dot_w_6 * surpression; 
+    float result = Amplitude * dominator / nominator * k_dot_w_6 * surpression; 
     
     return result;
 }
@@ -107,8 +108,11 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
 {
+    // init spectrum
     float2 h_0 = InitSpectrum[id.xy].xy;
+    // conjugate init spectrum
     float2 h_1 = InitSpectrum[id.xy].zw;
+    // w(k)
     float dispertion = WaveData[id.xy].z;
     
     // real time
@@ -120,7 +124,7 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     float2 secondPart = ComplexMult(h_1, exponent_1);
     float2 h = firstPart + secondPart;
     
-    FrequencyDomain[id.xy] = float4(h.x, h.y, 0, 1);
+    FrequencyDomain[id.xy] = float2(h.x, h.y);
 }
 
 [numthreads(8,8,1)]
@@ -166,4 +170,16 @@ void CalculateHeight (uint3 id : SV_DispatchThreadID)
     
     HeightMap[id.xy] = float4(vectorFieldX.x, height.x, vectorFieldZ.x, 1);
     NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
+}
+
+[numthreads(8,8,1)]
+void PermuteHeightMap (uint3 id : SV_DispatchThreadID)
+{
+    float perms[] = {1, -1};
+    int index = int(int(id.x + id.y) % 2);
+    float perm = perms[index];
+
+    float h = HeightMap[id.xy].r;
+    float permutedH = perm * (h/float(Size * Size));
+    HeightMap[id.xy] = float4(permutedH, permutedH, permutedH, 1);
 }
