@@ -6,6 +6,8 @@ Shader "Unlit/Ocean"
     {
         _HeightMap("Height Map", 2D) = "white" {}
         _NormalMap("Normal Map", 2D) = "bump" {}
+        _VectorFieldX("Vector Field X", 2D) = "white" {}
+        _VectorFieldZ("Vector Field Y", 2D) = "white" {}
         _Color("Color", Color) = (1, 1, 1, 1)
         _SpecColor ("Specular Color", Color) = (1, 1, 1, 1)
         _Shininess ("Shininess", Float) = 10
@@ -27,6 +29,8 @@ Shader "Unlit/Ocean"
             
             uniform sampler2D_half _HeightMap;
             uniform sampler2D_half _NormalMap;
+            uniform sampler2D_half _VectorFieldX;
+            uniform sampler2D_half _VectorFieldZ;
             uniform float4 _Color;
             uniform float4 _SpecColor;
             uniform float _Shininess;
@@ -47,10 +51,12 @@ Shader "Unlit/Ocean"
             v2f vert (appdata v)
             {
                 v2f o;
-                float4 texel = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
-                // v.vertex.x += texel.x;
-                v.vertex.y = texel.y * 10;
-                // v.vertex.z += texel.z;
+                float2 height = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
+                float2 vectorFieldX = tex2Dlod(_VectorFieldX, float4(v.uv, 0, 0));
+                float2 vectorFieldZ = tex2Dlod(_VectorFieldZ, float4(v.uv, 0, 0));
+                v.vertex.x += vectorFieldX.x;
+                v.vertex.y = height.x;
+                v.vertex.z += vectorFieldZ.x;
 
                 o.posWorld = mul(unity_ObjectToWorld, v.vertex);
                 o.pos = UnityObjectToClipPos(v.vertex);
@@ -60,12 +66,12 @@ Shader "Unlit/Ocean"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                //float3 normal = normalize(tex2D(_NormalMap, i.uv));
+                float3 normal = normalize(tex2D(_NormalMap, i.uv));
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - i.posWorld.xyz);
                 
                 float3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb * _Color.rgb; //Ambient component
                 
-                //float3 diffuse = _LightColor0.rgb * _Color.rgb * max(0.0, dot(normal, _WorldSpaceLightPos0.xyz)); //Diffuse component
+                float3 diffuse = _LightColor0.rgb * _Color.rgb * max(0.0, dot(normal, _WorldSpaceLightPos0.xyz)); //Diffuse component
                 
                 //
                 // float3 vert2LightSource = _WorldSpaceLightPos0.xyz - i.posWorld.xyz;
@@ -87,8 +93,9 @@ Shader "Unlit/Ocean"
                 // //     specularReflection = attenuation * _LightColor0.rgb * _SpecColor.rgb * pow(max(0.0, dot(reflect(-lightDirection, normal), viewDirection)), _Shininess);
                 // // }
                 
-                float3 color = ambient;
-                return float4(_Color.rgb, 1);
+                float3 color = ambient + diffuse;
+                
+                return float4(color.rgb, 1);
             }
             ENDCG
         }

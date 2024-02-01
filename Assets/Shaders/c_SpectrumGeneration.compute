@@ -1,7 +1,6 @@
 #pragma kernel CalculateInitSpectrum
 #pragma kernel CalculateFrequencyDomain
-#pragma kernel CalculateHeight
-#pragma kernel PermuteHeightMap
+#pragma kernel ComputeWrapper
 
 #define PI 3.14159265359
 #define G 9.81
@@ -25,9 +24,12 @@ Texture2D Noise;
 RWTexture2D<float4> InitSpectrum;
 RWTexture2D<float2> FrequencyDomain;
 RWTexture2D<float4> WaveData;
-RWTexture2D<float4> HeightMap;
+RWTexture2D<float2> HeightMap;
+RWTexture2D<float2> TangentMap;
+RWTexture2D<float2> BitangentMap;
 RWTexture2D<float4> NormalMap;
-
+RWTexture2D<float2> DisplacementMapX;
+RWTexture2D<float2> DisplacementMapZ;
 
 float PhillipsSpectrum(float2 waveVector)
 {
@@ -105,15 +107,33 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
     WaveData[id.xy] = float4(k.x, k.y, dispertion, 1);
 }
 
+uint BitReverse(uint n)
+{
+    uint r = 0;
+    for (uint i = 0; i < log2(Size); ++i)
+    {
+        r = (r << 1) | (n & 1);
+        n >>= 1;
+    }
+    return r;
+}
+
 [numthreads(8,8,1)]
 void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
 {
+    // Shift frequencies from the center
+    // uint2 shiftedIndex;
+    // shiftedIndex.x = (id.x + Size / 2) % Size;
+    // shiftedIndex.y = (id.y + Size / 2) % Size;
+    
     // init spectrum
     float2 h_0 = InitSpectrum[id.xy].xy;
     // conjugate init spectrum
     float2 h_1 = InitSpectrum[id.xy].zw;
     // w(k)
     float dispertion = WaveData[id.xy].z;
+    float2 k =  WaveData[id.xy].xy;
+    float oneOverKLength = 1 / max(0.001, length(k));
     
     // real time
     float phase = dispertion * Time;
@@ -122,64 +142,28 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     
     float2 firstPart = ComplexMult(h_0, exponent_0);
     float2 secondPart = ComplexMult(h_1, exponent_1);
-    float2 h = firstPart + secondPart;
+    float2 h = (firstPart + secondPart) / (Size * Size);
+    float2 ih = float2(-h.y, h.x);
     
-    FrequencyDomain[id.xy] = float2(h.x, h.y);
+    float2 tangent = ih * k.x;
+    float2 bitangent = ih * k.y;
+    float2 vectorFieldX = -DisplacementFactor * ih * -k.x * oneOverKLength;
+    float2 vectorFieldZ = -DisplacementFactor * ih * -k.y * oneOverKLength;
+    
+    FrequencyDomain[id.xy] = float2(h.x, h.y) * (Size * Size);
+    HeightMap[id.xy] = float2(h.x, h.y);
+    TangentMap[id.xy] = float2(tangent.x, tangent.y);
+    BitangentMap[id.xy] = float2(bitangent.x, bitangent.y);
+    DisplacementMapX[id.xy] = float2(vectorFieldX.x, vectorFieldX.y);
+    DisplacementMapZ[id.xy] = float2(vectorFieldZ.x, vectorFieldZ.y);
 }
 
 [numthreads(8,8,1)]
-void CalculateHeight (uint3 id : SV_DispatchThreadID)
+void ComputeWrapper (uint3 id : SV_DispatchThreadID)
 {
-    float2 height = 0;
-    float2 tangent = 0;
-    float2 bitangent = 0;
-    float2 vectorFieldX = 0;
-    float2 vectorFieldZ = 0;
-    
-    float n = Size / 2;
-    float2 pos = float2((id.x - n) * LengthScale / Size, (id.y - n) * LengthScale / Size);
-    
-    for (uint x = 0; x < Size; x++)
-    {
-        for (uint y = 0; y < Size; y++)
-        {
-            float2 frequencyPos = float2(x, y);
-            float2 h = FrequencyDomain[frequencyPos].xy;
-            float2 k =  WaveData[frequencyPos].xy;
-            float kLength = length(k);
-            float2 k_over_length = 0;
-            
-            if(kLength > 0.0001)
-                k_over_length = k / kLength;
-    
-            float2 exponent = EulerFormula(dot(k, pos));
-            float2 result = ComplexMult(h, exponent);
-            
-            height += result;
-            tangent += ComplexMult(float2(0, k.x), result);
-            bitangent += ComplexMult(float2(0, k.y), result);
-            vectorFieldX += ComplexMult(float2(0, -k_over_length.x), result);
-            vectorFieldZ += ComplexMult(float2(0, -k_over_length.y), result);
-        }
-    }
-    
-    vectorFieldX *= -DisplacementFactor;
-    vectorFieldZ *= -DisplacementFactor;
-    
-    float3 normal = normalize(float3(-tangent.x, 1, -bitangent.x));
-    
-    HeightMap[id.xy] = float4(vectorFieldX.x, height.x, vectorFieldZ.x, 1);
+    float bitangent = BitangentMap[id.xy].x;
+    float tangent = TangentMap[id.xy].x;
+    float3 normal = normalize(float3(-tangent, 1, -bitangent));
+
     NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
-}
-
-[numthreads(8,8,1)]
-void PermuteHeightMap (uint3 id : SV_DispatchThreadID)
-{
-    float perms[] = {1, -1};
-    int index = int(int(id.x + id.y) % 2);
-    float perm = perms[index];
-
-    float h = HeightMap[id.xy].r;
-    float permutedH = perm * (h/float(Size * Size));
-    HeightMap[id.xy] = float4(permutedH, permutedH, permutedH, 1);
 }
