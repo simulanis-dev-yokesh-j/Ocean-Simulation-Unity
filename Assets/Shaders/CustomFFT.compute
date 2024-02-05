@@ -1,27 +1,37 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel ComputeButterflyTexture
+#pragma kernel HorizontalOperation
+#pragma kernel VerticalOperation
 
 #define PI 3.14159265359
 
 uint Size;
 uint LogSize;
+uint Stage;
+uint PingPong;
 RWTexture2D<float4> ButterflyTexture;
+RWTexture2D<float4> PingPong0;
+RWTexture2D<float4> PingPong1;
 
 float2 EulerFormula(float x)
 {
     return float2(cos(x), sin(x));
 }
 
-// ref: https://stackoverflow.com/a/37394167
-uint BitReverse(uint n)
+// ref: https://stackoverflow.com/questions/746171/efficient-algorithm-for-bit-reversal-from-msb-lsb-to-lsb-msb-in-c
+uint BitReverse(uint x)
 {
-    uint reversedIndx;
+    uint n = 0;
+    uint mask = 0x1;
     
-    uint bits = 32 - log2(Size); // sizeof(uint) - log2(numberOfIndices);
-    for (uint j = 0; j < Size; j ++)
-        reversedIndx = reversebits(j << bits);
-
-    return reversedIndx;
+    for (int i=0; i < LogSize; i++)
+    {
+        n <<= 1;
+        n |= x & mask;
+        x >>= 1;
+    }
+    
+    return n;
 }
 
 [numthreads(1,8,1)]
@@ -49,17 +59,85 @@ void ComputeButterflyTexture (uint3 id : SV_DispatchThreadID)
         y2 += butterflyStep;
     else
         y1 -= butterflyStep;
-    
-    // init the starting values
+
     if(id.x == 0)
     {
-        float yRev1 = BitReverse(y1);
-        float yRev2 = BitReverse(y2);
+        y1 = BitReverse(y1);
+        y2 = BitReverse(y2);
+    }
+    
+    ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, y1, y2);
+}
 
-        ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, yRev1, yRev2);
+[numthreads(8,8,1)]
+void HorizontalOperation (uint3 id : SV_DispatchThreadID)
+{
+    float4 butterflyData = ButterflyTexture[float2(Stage, id.x)];
+    const float2 twiddle = butterflyData.xy;
+
+    float2 topSignal;
+    float2 bottomSignal;
+    float2 h;
+    
+    if(PingPong == 0)
+    {
+        // top wing signal
+        topSignal = PingPong0[float2(butterflyData.z, id.y)].rg;
+        // bottom wing signal
+        bottomSignal = PingPong0[float2(butterflyData.w, id.y)].rg;
+
+        // butterfly operation
+        h = topSignal + twiddle * bottomSignal;
+
+        PingPong1[id.xy] = float4(h.x, h.y, 0, 0);
     }
     else
     {
-        ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, y1, y2);
+        // top wing signal
+        topSignal = PingPong1[float2(butterflyData.z, id.y)].rg;
+        // bottom wing signal
+        bottomSignal = PingPong1[float2(butterflyData.w, id.y)].rg;
+
+        // butterfly operation
+        h = topSignal + twiddle * bottomSignal;
+
+        PingPong0[id.xy] = float4(h.x, h.y, 0, 0);
     }
 }
+
+[numthreads(8,8,1)]
+void VerticalOperation (uint3 id : SV_DispatchThreadID)
+{
+    float4 butterflyData = ButterflyTexture[float2(Stage, id.y)];
+    const float2 twiddle = butterflyData.xy;
+
+    float2 topSignal;
+    float2 bottomSignal;
+    float2 h;
+
+    if(PingPong == 0)
+    {
+        // top wing signal
+        topSignal = PingPong0[float2(id.x, butterflyData.z)].rg;
+        // bottom wing signal
+        bottomSignal = PingPong0[float2(id.x, butterflyData.w)].rg;
+
+        // butterfly operation
+        h = topSignal + twiddle * bottomSignal;
+
+        PingPong1[id.xy] = float4(h.x, h.y, 0, 0);
+    }
+    else
+    {
+        // top wing signal
+        topSignal = PingPong1[float2(id.x, butterflyData.z)].rg;
+        // bottom wing signal
+        bottomSignal = PingPong1[float2(id.x, butterflyData.w)].rg;
+
+        // butterfly operation
+        h = topSignal + twiddle * bottomSignal;
+
+        PingPong0[id.xy] = float4(h.x, h.y, 0, 0);
+    }
+}
+
