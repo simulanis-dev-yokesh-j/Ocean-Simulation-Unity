@@ -31,48 +31,35 @@ void ComputeButterflyTexture (uint3 id : SV_DispatchThreadID)
     float k = id.y * float(Size) / pow(2, id.x + 1) % Size;
     // twiddle factor
     float2 twiddle = EulerFormula(2 * PI * k / Size);
-    
-    float butterflySpan = pow(2, id.x);
+
+    const float butterflyStep = pow(2, id.x);
     // To determine if the butterfly is in the top or bottom half
-    float butterflyWing = 0;
+    float butterflyWing;
 
     if(id.y % pow(2, id.x + 1) < pow(2, id.x))
         butterflyWing = 1;
     else
         butterflyWing = -1;
 
+    uint y1 = id.y;
+    uint y2 = id.y;
+
+    // Offset the y values based on the butterfly wing and step
+    if(butterflyWing == 1)
+        y2 += butterflyStep;
+    else
+        y1 -= butterflyStep;
+    
     // init the starting values
     if(id.x == 0)
     {
-        // Top row
-        if(butterflyWing == 1)
-        {
-            // For evens, we get the top butterfly wing
-            float i_first = BitReverse(id.y);
-            float i_second = BitReverse(id.y + 1);
-            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
-        }
-        else
-        {
-            // For odds, we get the bottom butterfly wing
-            float i_first = BitReverse(id.y - 1);
-            float i_second = BitReverse(id.y);
-            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
-        }
+        float yRev1 = BitReverse(y1);
+        float yRev2 = BitReverse(y2);
+
+        ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, yRev1, yRev2);
     }
     else
     {
-        if(butterflyWing == 1)
-        {
-            float i_first = BitReverse(id.y);
-            float i_second = BitReverse(id.y + butterflySpan);
-            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
-        }
-        else
-        {
-            float i_first = BitReverse(id.y - butterflySpan);
-            float i_second = BitReverse(id.y);
-            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
-        }
+        ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, y1, y2);
     }
 }
