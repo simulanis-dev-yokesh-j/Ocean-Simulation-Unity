@@ -17,7 +17,7 @@ public class FastFourierTransform
         rt.autoGenerateMips = false;
         rt.anisoLevel = 6;
         rt.filterMode = FilterMode.Trilinear;
-        rt.wrapMode = TextureWrapMode.Repeat;
+        //rt.wrapMode = TextureWrapMode.Repeat;
         rt.enableRandomWrite = true;
         rt.Create();
         return rt;

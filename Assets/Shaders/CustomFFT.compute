@@ -1,0 +1,78 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ComputeButterflyTexture
+
+#define PI 3.14159265359
+
+uint Size;
+uint LogSize;
+RWTexture2D<float4> ButterflyTexture;
+
+float2 EulerFormula(float x)
+{
+    return float2(cos(x), sin(x));
+}
+
+// ref: https://stackoverflow.com/a/37394167
+uint BitReverse(uint n)
+{
+    uint reversedIndx;
+    
+    uint bits = 32 - log2(Size); // sizeof(uint) - log2(numberOfIndices);
+    for (uint j = 0; j < Size; j ++)
+        reversedIndx = reversebits(j << bits);
+
+    return reversedIndx;
+}
+
+[numthreads(1,8,1)]
+void ComputeButterflyTexture (uint3 id : SV_DispatchThreadID)
+{
+    // k value
+    float k = id.y * float(Size) / pow(2, id.x + 1) % Size;
+    // twiddle factor
+    float2 twiddle = EulerFormula(2 * PI * k / Size);
+    
+    float butterflySpan = pow(2, id.x);
+    // To determine if the butterfly is in the top or bottom half
+    float butterflyWing = 0;
+
+    if(id.y % pow(2, id.x + 1) < pow(2, id.x))
+        butterflyWing = 1;
+    else
+        butterflyWing = -1;
+
+    // init the starting values
+    if(id.x == 0)
+    {
+        // Top row
+        if(butterflyWing == 1)
+        {
+            // For evens, we get the top butterfly wing
+            float i_first = BitReverse(id.y);
+            float i_second = BitReverse(id.y + 1);
+            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
+        }
+        else
+        {
+            // For odds, we get the bottom butterfly wing
+            float i_first = BitReverse(id.y - 1);
+            float i_second = BitReverse(id.y);
+            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
+        }
+    }
+    else
+    {
+        if(butterflyWing == 1)
+        {
+            float i_first = BitReverse(id.y);
+            float i_second = BitReverse(id.y + butterflySpan);
+            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
+        }
+        else
+        {
+            float i_first = BitReverse(id.y - butterflySpan);
+            float i_second = BitReverse(id.y);
+            ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i_first, i_second);
+        }
+    }
+}

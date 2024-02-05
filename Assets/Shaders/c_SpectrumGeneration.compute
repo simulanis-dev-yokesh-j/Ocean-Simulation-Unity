@@ -24,7 +24,7 @@ Texture2D Noise;
 RWTexture2D<float4> InitSpectrum;
 RWTexture2D<float2> FrequencyDomain;
 RWTexture2D<float4> WaveData;
-RWTexture2D<float2> HeightMap;
+RWTexture2D<float4> HeightMap;
 RWTexture2D<float2> TangentMap;
 RWTexture2D<float2> BitangentMap;
 RWTexture2D<float4> NormalMap;
@@ -45,8 +45,8 @@ float PhillipsSpectrum(float2 waveVector)
     float nominator = kLength * kLength * kLength * kLength;
     float k_dot_w = dot(normalize(waveVector), WindDirection);
     float surpression = exp(-kLength * kLength * l * l);
-    float k_dot_w_6 = k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w;
-    float result = Amplitude * dominator / nominator * k_dot_w_6 * surpression; 
+    float k_dot_w_8 = k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w;
+    float result = Amplitude * dominator / nominator * k_dot_w_8 * surpression; 
     
     return result;
 }
@@ -151,7 +151,7 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     float2 vectorFieldZ = -DisplacementFactor * ih * -k.y * oneOverKLength;
     
     FrequencyDomain[id.xy] = float2(h.x, h.y) * (Size * Size);
-    HeightMap[id.xy] = float2(h.x, h.y);
+    HeightMap[id.xy] = float4(h.x, h.y, 0, 1);
     TangentMap[id.xy] = float2(tangent.x, tangent.y);
     BitangentMap[id.xy] = float2(bitangent.x, bitangent.y);
     DisplacementMapX[id.xy] = float2(vectorFieldX.x, vectorFieldX.y);
@@ -166,4 +166,5 @@ void ComputeWrapper (uint3 id : SV_DispatchThreadID)
     float3 normal = normalize(float3(-tangent, 1, -bitangent));
 
     NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
+    HeightMap[id.xy] = float4(HeightMap[id.xy].x, HeightMap[id.xy].x, HeightMap[id.xy].x, 1);
 }

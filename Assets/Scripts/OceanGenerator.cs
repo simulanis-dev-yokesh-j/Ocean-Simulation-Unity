@@ -53,8 +53,6 @@ public class OceanGenerator : MonoBehaviour
     private OceanRenderData _oceanData;  
     
     // Other var
-    //FastFourierTransform _fft;
-    //[SerializeField] private ComputeShader _fftComputeShader;
     private CommandBuffer _commandBuffer;
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
@@ -119,7 +117,7 @@ public class OceanGenerator : MonoBehaviour
         _oceanData.InitSpectrum = CreateRenderTexture(_size, _size);
         _oceanData.FrequencyDomainKernel = _computeShader.FindKernel("CalculateFrequencyDomain");
         _oceanData.FrequencyDomain = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.HeightMap = FastFourierTransform.CreateRenderTexture(_size);
+        _oceanData.HeightMap = CreateRenderTexture(_size, _size);
         _oceanData.TangentMap = FastFourierTransform.CreateRenderTexture(_size);
         _oceanData.BitangentMap = FastFourierTransform.CreateRenderTexture(_size);
         _oceanData.DisplacementXMap = FastFourierTransform.CreateRenderTexture(_size);
@@ -183,7 +181,8 @@ public class OceanGenerator : MonoBehaviour
         _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "TangentMap", _oceanData.TangentMap);
         _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "BitangentMap", _oceanData.BitangentMap);
         _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "NormalMap", _oceanData.NormalMap);
-        
+        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "HeightMap", _oceanData.HeightMap);
+
         _commandBuffer.DispatchCompute(_computeShader, kernel, _size / 8, _size / 8, 1);
     }
     
