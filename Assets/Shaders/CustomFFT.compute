@@ -2,6 +2,7 @@
 #pragma kernel ComputeButterflyTexture
 #pragma kernel HorizontalOperation
 #pragma kernel VerticalOperation
+#pragma kernel PermuteAndScale
 
 #define PI 3.14159265359
 
@@ -12,10 +13,16 @@ uint PingPong;
 RWTexture2D<float4> ButterflyTexture;
 RWTexture2D<float4> PingPong0;
 RWTexture2D<float4> PingPong1;
+RWTexture2D<float4> TimeDomain;
 
 float2 EulerFormula(float x)
 {
     return float2(cos(x), sin(x));
+}
+
+float2 ComplexMult(float2 a, float2 b)
+{
+    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
 // ref: https://stackoverflow.com/questions/746171/efficient-algorithm-for-bit-reversal-from-msb-lsb-to-lsb-msb-in-c
@@ -34,11 +41,17 @@ uint BitReverse(uint x)
     return n;
 }
 
+[numthreads(8,8,1)]
+void CopyInputToOutput (uint3 id : SV_DispatchThreadID)
+{
+    PingPong1[id.xy] = PingPong0[id.xy];
+}
+
 [numthreads(1,8,1)]
 void ComputeButterflyTexture (uint3 id : SV_DispatchThreadID)
 {
     // k value
-    float k = id.y * float(Size) / pow(2, id.x + 1) % Size;
+    float k = id.y * (float(Size) / pow(2, id.x + 1)) % Size;
     // twiddle factor
     float2 twiddle = EulerFormula(2 * PI * k / Size);
 
@@ -59,14 +72,14 @@ void ComputeButterflyTexture (uint3 id : SV_DispatchThreadID)
         y2 += butterflyStep;
     else
         y1 -= butterflyStep;
-
+    
     if(id.x == 0)
     {
         y1 = BitReverse(y1);
         y2 = BitReverse(y2);
     }
     
-    ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, y1, y2);
+    ButterflyTexture[id.xy] = float4(twiddle.xy, y1, y2);
 }
 
 [numthreads(8,8,1)]
@@ -82,26 +95,27 @@ void HorizontalOperation (uint3 id : SV_DispatchThreadID)
     if(PingPong == 0)
     {
         // top wing signal
-        topSignal = PingPong0[float2(butterflyData.z, id.y)].rg;
+        topSignal = PingPong0[float2(butterflyData.z, id.y)].xy;
         // bottom wing signal
-        bottomSignal = PingPong0[float2(butterflyData.w, id.y)].rg;
-
-        // butterfly operation
-        h = topSignal + twiddle * bottomSignal;
-
-        PingPong1[id.xy] = float4(h.x, h.y, 0, 0);
+        bottomSignal = PingPong0[float2(butterflyData.w, id.y)].xy;
+    
+        // butterfly operationz
+        h = topSignal + ComplexMult(twiddle, bottomSignal);
+        //h = topSignal + twiddle * bottomSignal;
+    
+        PingPong1[id.xy] = float4(h.x, h.y, 0, 1);
     }
     else
     {
         // top wing signal
-        topSignal = PingPong1[float2(butterflyData.z, id.y)].rg;
+        topSignal = PingPong1[float2(butterflyData.z, id.y)].xy;
         // bottom wing signal
-        bottomSignal = PingPong1[float2(butterflyData.w, id.y)].rg;
-
+        bottomSignal = PingPong1[float2(butterflyData.w, id.y)].xy;
+    
         // butterfly operation
-        h = topSignal + twiddle * bottomSignal;
-
-        PingPong0[id.xy] = float4(h.x, h.y, 0, 0);
+        h = topSignal + ComplexMult(twiddle, bottomSignal);
+    
+        PingPong0[id.xy] = float4(h.x, h.y, 0, 1);
     }
 }
 
@@ -110,22 +124,22 @@ void VerticalOperation (uint3 id : SV_DispatchThreadID)
 {
     float4 butterflyData = ButterflyTexture[float2(Stage, id.y)];
     const float2 twiddle = butterflyData.xy;
-
+    
     float2 topSignal;
     float2 bottomSignal;
     float2 h;
-
+    
     if(PingPong == 0)
     {
         // top wing signal
         topSignal = PingPong0[float2(id.x, butterflyData.z)].rg;
         // bottom wing signal
         bottomSignal = PingPong0[float2(id.x, butterflyData.w)].rg;
-
+    
         // butterfly operation
-        h = topSignal + twiddle * bottomSignal;
-
-        PingPong1[id.xy] = float4(h.x, h.y, 0, 0);
+        h = topSignal + ComplexMult(twiddle, bottomSignal);
+    
+        PingPong1[id.xy] = float4(h.x, h.y, 0, 1);
     }
     else
     {
@@ -133,11 +147,30 @@ void VerticalOperation (uint3 id : SV_DispatchThreadID)
         topSignal = PingPong1[float2(id.x, butterflyData.z)].rg;
         // bottom wing signal
         bottomSignal = PingPong1[float2(id.x, butterflyData.w)].rg;
-
+    
         // butterfly operation
-        h = topSignal + twiddle * bottomSignal;
+        h = topSignal + ComplexMult(twiddle, bottomSignal);
+    
+        PingPong0[id.xy] = float4(h.x, h.y, 0, 1);
+    }
+}
 
-        PingPong0[id.xy] = float4(h.x, h.y, 0, 0);
+[numthreads(8,8,1)]
+void PermuteAndScale (uint3 id : SV_DispatchThreadID)
+{
+    float perms[] = {-1, 1};
+    uint index = int((id.x + id.y) % 2);
+    float perm = perms[index];
+    
+    if(PingPong == 0)
+    {
+        float h = perm * (PingPong0[id.xy].x / float(Size * Size));
+        TimeDomain[id.xy] = float4(h, h, h, 1);
+    }
+    else
+    {
+        float h = perm * (PingPong1[id.xy].x / float(Size * Size));
+        TimeDomain[id.xy] = float4(h, h, h, 1);
     }
 }
 

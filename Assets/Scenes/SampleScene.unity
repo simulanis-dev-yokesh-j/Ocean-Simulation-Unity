@@ -1008,7 +1008,6 @@ GameObject:
   m_Component:
   - component: {fileID: 432667427}
   - component: {fileID: 432667428}
-  - component: {fileID: 432667429}
   m_Layer: 0
   m_Name: Ocean Generator
   m_TagString: Untagged
@@ -1049,30 +1048,17 @@ MonoBehaviour:
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
   _normalMapImage: {fileID: 783113521}
+  _fftComputeShader: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
   _resolution: 200
   _seed: 10
-  _size: 512
-  _lengthScale: 1500
-  _amplitude: 3000
+  _size: 256
+  _lengthScale: 1000
+  _speed: 1.5
+  _amplitude: 150
   _windSpeed: 31
   _windDirection: {x: 1, y: 1}
   _depth: 1000
-  _displacementFactor: 0.8
---- !u!114 &432667429
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 432667426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6f6d780018754e5caecc6c3e64f8945, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _butterflyComputeShader: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960,
-    type: 3}
-  _buterflyTextureImage: {fileID: 274971869}
+  _displacementFactor: 0.65
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0

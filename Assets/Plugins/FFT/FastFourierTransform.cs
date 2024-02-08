@@ -11,13 +11,12 @@ public class FastFourierTransform
 
     public static RenderTexture CreateRenderTexture(int size, RenderTextureFormat format = RenderTextureFormat.RGFloat, bool useMips = false)
     {
-        RenderTexture rt = new RenderTexture(size, size, 0,
-            format, RenderTextureReadWrite.Linear);
+        RenderTexture rt = new RenderTexture(size, size, 0, format, RenderTextureReadWrite.Linear);
         rt.useMipMap = useMips;
         rt.autoGenerateMips = false;
         rt.anisoLevel = 6;
         rt.filterMode = FilterMode.Trilinear;
-        //rt.wrapMode = TextureWrapMode.Repeat;
+        rt.wrapMode = TextureWrapMode.Repeat;
         rt.enableRandomWrite = true;
         rt.Create();
         return rt;
