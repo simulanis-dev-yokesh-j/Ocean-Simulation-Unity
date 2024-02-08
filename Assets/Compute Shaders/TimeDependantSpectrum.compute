@@ -1,0 +1,69 @@
+#pragma kernel CalculateFrequencyDomain
+#pragma kernel ComputeWrapper
+
+#define PI 3.14159265359
+#define G 9.81
+
+// ====== Inputs ======
+uint Size;
+uint LengthScale;
+float Time;
+float DisplacementFactor;
+RWTexture2D<float4> InitSpectrum;
+RWTexture2D<float4> WaveData;
+
+// ====== Outputs ======
+RWTexture2D<float2> FrequencyDomain;
+RWTexture2D<float2> TangentMap;
+RWTexture2D<float2> BitangentMap;
+RWTexture2D<float4> NormalMap;
+RWTexture2D<float2> DisplacementMapX;
+RWTexture2D<float2> DisplacementMapZ;
+
+float2 EulerFormula(float x)
+{
+    return float2(cos(x), sin(x));
+}
+
+float2 ComplexMult(float2 a, float2 b)
+{
+    float2 result;
+    result.x = a.x * b.x - a.y * b.y;
+    result.y = a.x * b.y + a.y * b.x;
+    return result;
+}
+
+[numthreads(8,8,1)]
+void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
+{
+    // init spectrum
+    float2 h_0 = InitSpectrum[id.xy].xy;
+    // conjugate init spectrum
+    float2 h_1 = InitSpectrum[id.xy].zw;
+    // w(k)
+    float dispertion = WaveData[id.xy].z;
+    float2 k =  WaveData[id.xy].xy;
+    float oneOverKLength = 1 / max(0.001, length(k));
+    
+    // real time
+    float phase = dispertion * Time;
+    float2 exponent_0 = EulerFormula(phase);
+    float2 exponent_1 = EulerFormula(-phase);
+    
+    float2 firstPart = ComplexMult(h_0, exponent_0);
+    float2 secondPart = ComplexMult(h_1, exponent_1);
+    float2 h = firstPart + secondPart;
+    float2 ih = float2(-h.y, h.x);
+    
+    float2 tangent = ih * k.x;
+    float2 bitangent = ih * k.y;
+    
+    float2 vectorFieldX = -DisplacementFactor * ih * -k.x * oneOverKLength;
+    float2 vectorFieldZ = -DisplacementFactor * ih * -k.y * oneOverKLength;
+    
+    FrequencyDomain[id.xy] = float2(h.x, h.y);
+    TangentMap[id.xy] = float2(tangent.x, tangent.y);
+    BitangentMap[id.xy] = float2(bitangent.x, bitangent.y);
+    DisplacementMapX[id.xy] = float2(vectorFieldX.x, vectorFieldX.y);
+    DisplacementMapZ[id.xy] = float2(vectorFieldZ.x, vectorFieldZ.y);
+}

@@ -1,0 +1,23 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ComputeWrapper
+
+// Inputs
+RWTexture2D<float4> BitangentMap;
+RWTexture2D<float4> TangentMap;
+RWTexture2D<float4> HeightMap;
+RWTexture2D<float4> DisplacementMapX;
+RWTexture2D<float4> DisplacementMapZ;
+
+RWTexture2D<float4> NormalMap;
+RWTexture2D<float4> DisplacementMap;
+
+[numthreads(8,8,1)]
+void ComputeWrapper (uint3 id : SV_DispatchThreadID)
+{
+    float bitangent = BitangentMap[id.xy].x;
+    float tangent = TangentMap[id.xy].x;
+    float3 normal = normalize(float3(-tangent, 1, -bitangent));
+
+    NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
+    DisplacementMap[id.xy] = float4(DisplacementMapX[id.xy].x, HeightMap[id.xy].x, DisplacementMapZ[id.xy].x, 1);
+}

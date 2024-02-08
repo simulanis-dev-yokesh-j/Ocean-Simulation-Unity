@@ -1,0 +1,80 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CalculateInitSpectrum
+
+#define PI 3.14159265359
+#define G 9.81
+
+// Inputs
+uint Size;
+uint LengthScale;
+float Amplitude;
+float WindSpeed;
+float2 WindDirection;
+float Depth;
+Texture2D Noise;
+
+// Outputs
+RWTexture2D<float4> InitSpectrum;
+RWTexture2D<float4> WaveData;
+
+float PhillipsSpectrum(float2 waveVector)
+{
+    float L = WindSpeed * WindSpeed / G;
+    float l = L / 2000;
+    
+    float kLength = length(waveVector);
+
+    if(kLength < 0.0001)
+        return 0;
+    
+    float dominator = exp(-1 / (kLength * kLength * L * L));
+    float nominator = kLength * kLength * kLength * kLength;
+    float k_dot_w = dot(normalize(waveVector), WindDirection);
+    float surpression = exp(-kLength * kLength * l * l);
+    float k_dot_w_8 = k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w;
+    float result = Amplitude * dominator / nominator * k_dot_w_8 * surpression; 
+    
+    return result;
+}
+
+float WaveDispertion(float kLength)
+{
+    return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
+}
+
+float2 FourierWaveAmplitude(float2 pos, float2 k)
+{
+    float2 rand = float2(Noise[pos.xy].x, Noise[pos.xy].y);
+
+    return 1 / sqrt(2) * rand * sqrt(PhillipsSpectrum(k));
+}
+
+float2 FourierWaveAmplitudeConj(float2 pos, float2 k)
+{
+    float2 rand = float2(Noise[pos.xy].z, Noise[pos.xy].w);
+
+    return 1 / sqrt(2) * rand * sqrt(PhillipsSpectrum(k));
+}
+
+float2 WaveVector(float2 pos)
+{
+    float n = Size / 2;
+    float k_x = 2 * PI * (pos.x - n) / LengthScale;
+    float k_z = 2 * PI * (pos.y - n) / LengthScale;
+    
+    return float2(k_x, k_z);
+}
+
+[numthreads(8,8,1)]
+void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
+{
+    float2 k = WaveVector(id.xy);
+    float kLength = length(k);
+    float dispertion = WaveDispertion(kLength);
+    
+    float2 h_0 = FourierWaveAmplitude(id.xy, k);
+    float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k); 
+    
+    InitSpectrum[id.xy] = float4(h_0.x, h_0.y, h_1.x, h_1.y);
+    WaveData[id.xy] = float4(k.x, k.y, dispertion, 1);
+}

@@ -2,6 +2,7 @@
 #pragma kernel ComputeButterflyTexture
 #pragma kernel HorizontalOperation
 #pragma kernel VerticalOperation
+#pragma kernel CopyToPingPong1
 #pragma kernel PermuteAndScale
 
 #define PI 3.14159265359
@@ -13,7 +14,6 @@ uint PingPong;
 RWTexture2D<float4> ButterflyTexture;
 RWTexture2D<float4> PingPong0;
 RWTexture2D<float4> PingPong1;
-RWTexture2D<float4> TimeDomain;
 
 float2 EulerFormula(float x)
 {
@@ -156,21 +156,19 @@ void VerticalOperation (uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(8,8,1)]
+void CopyToPingPong1 (uint3 id : SV_DispatchThreadID)
+{
+    PingPong1[id.xy] = PingPong0[id.xy];
+}
+
+[numthreads(8,8,1)]
 void PermuteAndScale (uint3 id : SV_DispatchThreadID)
 {
     float perms[] = {-1, 1};
     uint index = int((id.x + id.y) % 2);
     float perm = perms[index];
     
-    if(PingPong == 0)
-    {
-        float h = perm * (PingPong0[id.xy].x / float(Size * Size));
-        TimeDomain[id.xy] = float4(h, h, h, 1);
-    }
-    else
-    {
-        float h = perm * (PingPong1[id.xy].x / float(Size * Size));
-        TimeDomain[id.xy] = float4(h, h, h, 1);
-    }
+    float h = perm * (PingPong1[id.xy].x / float(Size * Size));
+    PingPong0[id.xy] = float4(h, h, h, 1);
 }
 

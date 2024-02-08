@@ -1,40 +1,58 @@
-using System;
-using OceanSystem;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
-using OceanSystem;
 
 public class OceanGenerator : MonoBehaviour
 {
     [System.Serializable]
-    public struct OceanRenderData
+    public struct ComputeShaders
     {
-        public int InitSpectrumKernel;
+        public ComputeShader InitSpectrum;   
+        public ComputeShader TimeDependantSpectrum;
+        public ComputeShader SpectrumWrapper;
+        public ComputeShader FFT;
+    }
+    
+    [System.Serializable]
+    public struct InitSpectrumData
+    {
+        public int Kernel;
         public RenderTexture InitSpectrum;
-        public int FrequencyDomainKernel;
+        public RenderTexture WaveData;
+        public Texture2D GaussianNoise;
+    }
+    
+    [System.Serializable]
+    public struct TimeDependantSpectrumData
+    {
+        public int Kernel;
         public RenderTexture FrequencyDomain;
         public RenderTexture HeightMap;
         public RenderTexture TangentMap;
         public RenderTexture BitangentMap;
-        public RenderTexture WaveData;
-        public RenderTexture DisplacementXMap;
-        public RenderTexture DisplacementZMap;
-        public int ComputeWrapperKernel;
-        public RenderTexture NormalMap;
-        public Texture2D GaussianNoise;
+        public RenderTexture DisplacementMapX;
+        public RenderTexture DisplacementMapZ;
     }
+    
+    [System.Serializable]
+    public struct SpectrumWrapperData
+    {
+        public int Kernel;
+        public RenderTexture NormalMap;
+        public RenderTexture DisplacementMap;
+    }
+    
+    [Header("Shaders")]
+    [SerializeField] private ComputeShaders _computeShaders;
 
     [Header("References")]
     [SerializeField] private GameObject _ocean;
     [SerializeField] private Material _material;
-    [SerializeField] private ComputeShader _computeShader;
     [SerializeField] private RawImage _spectrumMapImage;
     [SerializeField] private RawImage _hightMapImage;
     [SerializeField] private RawImage _normalMapImage;
-    [SerializeField] private ComputeShader _fftComputeShader;
 
     [Header("Geometry Parameters")]
     [SerializeField] private int _resolution = 256;
@@ -52,17 +70,17 @@ public class OceanGenerator : MonoBehaviour
     private float _time = 0f;
     
     // Outputs
-    private OceanRenderData _oceanData;
+    private InitSpectrumData _initSpectrumData;
+    private TimeDependantSpectrumData _timeDependantSpectrumData;
+    private SpectrumWrapperData _spectrumWrapperData;
     
     // Other var
-    private ComputeCustomFFT _fft;
+    private ComputeFFT _fft;
     private CommandBuffer _commandBuffer;
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
-    private static readonly int HeightMapID = Shader.PropertyToID("_HeightMap");
+    private static readonly int DisplacementMapID = Shader.PropertyToID("_DisplacementMap");
     private static readonly int NormalMapID = Shader.PropertyToID("_NormalMap");
-    private static readonly int VectorFieldXID = Shader.PropertyToID("_VectorFieldX");
-    private static readonly int VectorFieldZID = Shader.PropertyToID("_VectorFieldZ");
 
     private void Start()
     {
@@ -75,12 +93,10 @@ public class OceanGenerator : MonoBehaviour
         
         InitRenderTextures();
         GenerateInitSpectrum();
-        _fft = new ComputeCustomFFT(_size, _commandBuffer, _fftComputeShader);
+        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
 
-        _material.SetTexture(HeightMapID, _oceanData.HeightMap);
-        _material.SetTexture(NormalMapID, _oceanData.NormalMap);
-        _material.SetTexture(VectorFieldXID, _oceanData.DisplacementXMap);
-        _material.SetTexture(VectorFieldZID, _oceanData.DisplacementZMap);
+        _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
+        _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
     }
 
     private void OnValidate()
@@ -94,10 +110,8 @@ public class OceanGenerator : MonoBehaviour
         InitRenderTextures();
         GenerateInitSpectrum();
         
-        _material.SetTexture(HeightMapID, _oceanData.HeightMap);
-        _material.SetTexture(NormalMapID, _oceanData.NormalMap);
-        _material.SetTexture(VectorFieldXID, _oceanData.DisplacementXMap);
-        _material.SetTexture(VectorFieldZID, _oceanData.DisplacementZMap);
+        _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
+        _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
     }
     
     private void Update()
@@ -110,90 +124,91 @@ public class OceanGenerator : MonoBehaviour
         Graphics.ExecuteCommandBuffer(_commandBuffer);
         _commandBuffer.Clear();
         
-        _spectrumMapImage.texture = _oceanData.FrequencyDomain;
-        _hightMapImage.texture = _oceanData.HeightMap;
-        _normalMapImage.texture = _oceanData.NormalMap;
+        _spectrumMapImage.texture = _timeDependantSpectrumData.FrequencyDomain;
+        _hightMapImage.texture = _timeDependantSpectrumData.HeightMap;
+        _normalMapImage.texture = _spectrumWrapperData.NormalMap;
     }
 
     private void InitRenderTextures()
     {
-        _oceanData.InitSpectrumKernel = _computeShader.FindKernel("CalculateInitSpectrum");
-        _oceanData.InitSpectrum = CreateRenderTexture(_size, _size);
-        _oceanData.FrequencyDomainKernel = _computeShader.FindKernel("CalculateFrequencyDomain");
-        _oceanData.FrequencyDomain = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.HeightMap = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.TangentMap = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.BitangentMap = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.DisplacementXMap = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.DisplacementZMap = FastFourierTransform.CreateRenderTexture(_size);
-        _oceanData.WaveData = CreateRenderTexture(_size, _size);
-        _oceanData.ComputeWrapperKernel = _computeShader.FindKernel("ComputeWrapper");
-        _oceanData.NormalMap = CreateRenderTexture(_size, _size);
+        _initSpectrumData.Kernel = _computeShaders.InitSpectrum.FindKernel("CalculateInitSpectrum");
+        _timeDependantSpectrumData.Kernel = _computeShaders.TimeDependantSpectrum.FindKernel("CalculateFrequencyDomain");
+        _spectrumWrapperData.Kernel = _computeShaders.SpectrumWrapper.FindKernel("ComputeWrapper");
         
-        _oceanData.GaussianNoise = GenerateGaussianNoise(_size);
+        _initSpectrumData.InitSpectrum = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
+        _initSpectrumData.WaveData = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
+        _initSpectrumData.GaussianNoise = GenerateGaussianNoise(_size);
+        _timeDependantSpectrumData.FrequencyDomain = Utilities.CreateRenderTexture(_size);
+        _timeDependantSpectrumData.HeightMap = Utilities.CreateRenderTexture(_size);
+        _timeDependantSpectrumData.TangentMap = Utilities.CreateRenderTexture(_size);
+        _timeDependantSpectrumData.BitangentMap = Utilities.CreateRenderTexture(_size);
+        _timeDependantSpectrumData.DisplacementMapX = Utilities.CreateRenderTexture(_size);
+        _timeDependantSpectrumData.DisplacementMapZ = Utilities.CreateRenderTexture(_size);
+        _spectrumWrapperData.DisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
+        _spectrumWrapperData.NormalMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
     }
 
     private void GenerateInitSpectrum()
     {
-        RenderTexture initSpectrum = _oceanData.InitSpectrum;
-        int kernel = _oceanData.InitSpectrumKernel;
+        int kernel = _initSpectrumData.Kernel;
+        ComputeShader shader = _computeShaders.InitSpectrum;
     
         // Set variables
-        _commandBuffer.SetComputeIntParam(_computeShader, "Size", _size);
-        _commandBuffer.SetComputeIntParam(_computeShader, "LengthScale", _lengthScale);
-        _commandBuffer.SetComputeFloatParam(_computeShader, "Amplitude", _amplitude);
-        _commandBuffer.SetComputeFloatParam(_computeShader, "WindSpeed", _windSpeed);
-        _commandBuffer.SetComputeVectorParam(_computeShader, "WindDirection", _windDirection.normalized);
-        _commandBuffer.SetComputeFloatParam(_computeShader, "Depth", _depth);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "Noise", _oceanData.GaussianNoise);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "InitSpectrum", initSpectrum);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "WaveData", _oceanData.WaveData);
+        _commandBuffer.SetComputeIntParam(shader, "Size", _size);
+        _commandBuffer.SetComputeIntParam(shader, "LengthScale", _lengthScale);
+        _commandBuffer.SetComputeFloatParam(shader, "Amplitude", _amplitude);
+        _commandBuffer.SetComputeFloatParam(shader, "WindSpeed", _windSpeed);
+        _commandBuffer.SetComputeVectorParam(shader, "WindDirection", _windDirection.normalized);
+        _commandBuffer.SetComputeFloatParam(shader, "Depth", _depth);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "Noise", _initSpectrumData.GaussianNoise);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.InitSpectrum);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "WaveData", _initSpectrumData.WaveData);
 
         // Dispatch the compute shader
-        _commandBuffer.DispatchCompute(_computeShader, kernel, _size / 8, _size / 8, 1);
+        _commandBuffer.DispatchCompute(_computeShaders.InitSpectrum, kernel, _size / 8, _size / 8, 1);
     }
 
     private void GenerateFrequencyDomain()
     {
-        int kernel = _oceanData.FrequencyDomainKernel;
+        int kernel = _timeDependantSpectrumData.Kernel;
+        ComputeShader shader = _computeShaders.TimeDependantSpectrum;
     
         // Set variables
-        _commandBuffer.SetComputeFloatParam(_computeShader, "Time", _time);
-        _commandBuffer.SetComputeFloatParam(_computeShader, "DisplacementFactor", _displacementFactor);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "InitSpectrum", _oceanData.InitSpectrum);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "WaveData", _oceanData.WaveData);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "FrequencyDomain", _oceanData.FrequencyDomain);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "HeightMap", _oceanData.HeightMap);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "TangentMap", _oceanData.TangentMap);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "BitangentMap", _oceanData.BitangentMap);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "DisplacementMapX", _oceanData.DisplacementXMap);
-        _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "DisplacementMapZ", _oceanData.DisplacementZMap);
+        _commandBuffer.SetComputeFloatParam(shader, "Time", _time);
+        _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _displacementFactor);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.InitSpectrum);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "WaveData", _initSpectrumData.WaveData);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "FrequencyDomain", _timeDependantSpectrumData.FrequencyDomain);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "TangentMap", _timeDependantSpectrumData.TangentMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "BitangentMap", _timeDependantSpectrumData.BitangentMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMapX", _timeDependantSpectrumData.DisplacementMapX);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMapZ", _timeDependantSpectrumData.DisplacementMapZ);
 
         // Dispatch the compute shader
-        _commandBuffer.DispatchCompute(_computeShader, kernel, _size / 8, _size / 8, 1);
+        _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);
     }
 
     private void GenerateHeightMap()
-    { 
-        // ComputeFFT.IFFT2D(_commandBuffer, _oceanData.HeightMap, false, true);
-        //  ComputeFFT.IFFT2D(_commandBuffer, _oceanData.TangentMap, false, true);
-        //  ComputeFFT.IFFT2D(_commandBuffer, _oceanData.BitangentMap, false, true);
-        //  ComputeFFT.IFFT2D(_commandBuffer, _oceanData.DisplacementXMap, false, true);
-        //  ComputeFFT.IFFT2D(_commandBuffer, _oceanData.DisplacementZMap, false, true);
+    {
+        _fft.DoIFFT(_timeDependantSpectrumData.FrequencyDomain, _timeDependantSpectrumData.HeightMap);
+        _fft.DoIFFT(_timeDependantSpectrumData.TangentMap);
+        _fft.DoIFFT(_timeDependantSpectrumData.BitangentMap);
+        _fft.DoIFFT(_timeDependantSpectrumData.DisplacementMapX);
+        _fft.DoIFFT(_timeDependantSpectrumData.DisplacementMapZ);
         
-        _fft.DoIFFT(_oceanData.FrequencyDomain, _oceanData.HeightMap);
-        // _fft.DoIFFT(_oceanData.TangentMap);
-        // _fft.DoIFFT(_oceanData.BitangentMap);
-        // _fft.DoIFFT(_oceanData.DisplacementXMap);
-        // _fft.DoIFFT(_oceanData.DisplacementXMap);
-        //
-        //  int kernel = _oceanData.ComputeWrapperKernel;
-        //  _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "TangentMap", _oceanData.TangentMap);
-        //  _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "BitangentMap", _oceanData.BitangentMap);
-        //  _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "NormalMap", _oceanData.NormalMap);
-        //  _commandBuffer.SetComputeTextureParam(_computeShader, kernel, "HeightMap", _oceanData.HeightMap);
-        //
-        // _commandBuffer.DispatchCompute(_computeShader, kernel, _size / 8, _size / 8, 1);
+        int kernel = _spectrumWrapperData.Kernel;
+        ComputeShader shader = _computeShaders.SpectrumWrapper;
+        
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "TangentMap", _timeDependantSpectrumData.TangentMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "BitangentMap", _timeDependantSpectrumData.BitangentMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMapX", _timeDependantSpectrumData.DisplacementMapX);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMapZ", _timeDependantSpectrumData.DisplacementMapZ);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "NormalMap", _spectrumWrapperData.NormalMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMap", _spectrumWrapperData.DisplacementMap);
+
+        _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);
     }
     
     private void GeneratePlane(int size, int resolution)
@@ -277,75 +292,6 @@ public class OceanGenerator : MonoBehaviour
     float NormalRandom()
     {
         return Mathf.Cos(2 * Mathf.PI * Random.value) * Mathf.Sqrt(-2 * Mathf.Log(Random.value));
-    }
-    
-    private void PrintSpectrumTexture(RenderTexture renderTexture)
-    {
-        // Create a new Texture2D with a format that supports negative values
-        Texture2D texture2D = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGBAHalf, false);
-
-        // Set the active RenderTexture
-        RenderTexture.active = renderTexture;
-
-        // Read the pixels from the RenderTexture
-        texture2D.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-
-        // Apply the changes
-        texture2D.Apply();
-
-        // Reset the active RenderTexture
-        RenderTexture.active = null;
-
-        // Now you have a Texture2D object with the data from the RenderTexture
-        // You can access the pixel data, keeping in mind that the values can be negative
-
-        Vector3 lowestX = new Vector3(0, 0, 0);
-        Vector3 highestX = new Vector3(0, 0, 0);
-        Vector3 lowestY = new Vector3(0, 0, 0);
-        Vector3 highestY = new Vector3(0, 0, 0);
-
-        // Print the pixel values
-        for (int i = 0; i < texture2D.width; i++)
-        {
-            for (int j = 0; j < texture2D.height; j++)
-            {
-                Color pixelColor = texture2D.GetPixel(i, j);
-                Debug.Log("Pixel (" + i + ", " + j + "): " + pixelColor);
-
-                if (pixelColor.r < lowestX.x)
-                {
-                    lowestX.x = pixelColor.r;
-                    lowestX.y = i;
-                    lowestX.z = j;
-                } 
-                
-                if (pixelColor.r > highestX.x)
-                {
-                    highestX.x = pixelColor.r;
-                    highestX.y = i;
-                    highestX.z = j;
-                }
-                
-                if (pixelColor.g < lowestY.x)
-                {
-                    lowestY.x = pixelColor.g;
-                    lowestY.y = i;
-                    lowestY.z = j;
-                }
-                
-                if (pixelColor.g > highestY.x)
-                {
-                    highestY.x = pixelColor.g;
-                    highestY.y = i;
-                    highestY.z = j;
-                }
-            }
-        }
-        
-        print($"Lowest X: {lowestX.x} at ({lowestX.y}, {lowestX.z})");
-        print($"Highest X: {highestX.x} at ({highestX.y}, {highestX.z})");
-        print($"Lowest Y: {lowestY.x} at ({lowestY.y}, {lowestY.z})");
-        print($"Highest Y: {highestY.x} at ({highestY.y}, {highestY.z})");
     }
 
     private void OnDestroy()

@@ -4,13 +4,11 @@ Shader "Unlit/Ocean"
 {
     Properties
     {
-        _HeightMap("Height Map", 2D) = "white" {}
-        _NormalMap("Normal Map", 2D) = "bump" {}
-        _VectorFieldX("Vector Field X", 2D) = "white" {}
-        _VectorFieldZ("Vector Field Y", 2D) = "white" {}
         _Color("Color", Color) = (1, 1, 1, 1)
         _SpecColor ("Specular Color", Color) = (1, 1, 1, 1)
         _Shininess ("Shininess", Float) = 10
+        _DisplacementMap("Displacement Map", 2D) = "white" {}
+        _NormalMap("Normal Map", 2D) = "bump" {}
     }
     SubShader
     {
@@ -27,13 +25,11 @@ Shader "Unlit/Ocean"
 
             uniform float4 _LightColor0; //From UnityCG
             
-            uniform sampler2D_half _HeightMap;
-            uniform sampler2D_half _NormalMap;
-            uniform sampler2D_half _VectorFieldX;
-            uniform sampler2D_half _VectorFieldZ;
             uniform float4 _Color;
             uniform float4 _SpecColor;
             uniform float _Shininess;
+            uniform sampler2D_half _DisplacementMap;
+            uniform sampler2D_half _NormalMap;
 
             struct appdata
             {
@@ -51,12 +47,10 @@ Shader "Unlit/Ocean"
             v2f vert (appdata v)
             {
                 v2f o;
-                float2 height = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
-                float2 vectorFieldX = tex2Dlod(_VectorFieldX, float4(v.uv, 0, 0));
-                float2 vectorFieldZ = tex2Dlod(_VectorFieldZ, float4(v.uv, 0, 0));
-                //v.vertex.x += vectorFieldX.x;
-                v.vertex.y = height.x;
-                //v.vertex.z += vectorFieldZ.x;
+                float3 displacement = tex2Dlod(_DisplacementMap, float4(v.uv, 0, 0));
+                v.vertex.x += displacement.x;
+                v.vertex.y = displacement.y;
+                v.vertex.z += displacement.z;
 
                 o.posWorld = mul(unity_ObjectToWorld, v.vertex);
                 o.pos = UnityObjectToClipPos(v.vertex);

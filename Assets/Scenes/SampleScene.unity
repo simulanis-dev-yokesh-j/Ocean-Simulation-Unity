@@ -1042,13 +1042,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01de09a5bb8864c15bec996ecb605056, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _computeShaders:
+    InitSpectrum: {fileID: 7200000, guid: 0a98bc5a99cf1450ebf29adbb5fc18cb, type: 3}
+    TimeDependantSpectrum: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732,
+      type: 3}
+    SpectrumWrapper: {fileID: 7200000, guid: ce81d37aee1894183aad5a31c1df0a27, type: 3}
+    FFT: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
   _ocean: {fileID: 1089990282}
   _material: {fileID: 2100000, guid: 67fbac55d83f64253b4c13f8cb37bced, type: 2}
-  _computeShader: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732, type: 3}
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
   _normalMapImage: {fileID: 783113521}
-  _fftComputeShader: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
   _resolution: 200
   _seed: 10
   _size: 256
@@ -1074,7 +1078,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &545947628
 Transform:
   m_ObjectHideFlags: 0
