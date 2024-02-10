@@ -5,7 +5,8 @@ Shader "Unlit/Ocean"
     Properties
     {
         _Color("Color", Color) = (1, 1, 1, 1)
-        _SpecColor ("Specular Color", Color) = (1, 1, 1, 1)
+        _DiffuseColor("Diffuse Color", Color) = (1, 1, 1, 1)
+        [HDR] _SpecColor ("Specular Color", Color) = (1, 1, 1, 1)
         _Shininess ("Shininess", Float) = 10
         _DisplacementMap("Displacement Map", 2D) = "white" {}
         _NormalMap("Normal Map", 2D) = "bump" {}
@@ -17,6 +18,7 @@ Shader "Unlit/Ocean"
 
         Pass
         {
+            Blend SrcAlpha OneMinusSrcAlpha
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -26,6 +28,7 @@ Shader "Unlit/Ocean"
             uniform float4 _LightColor0; //From UnityCG
             
             uniform float4 _Color;
+            uniform float4 _DiffuseColor;
             uniform float4 _SpecColor;
             uniform float _Shininess;
             uniform sampler2D_half _DisplacementMap;
@@ -63,31 +66,16 @@ Shader "Unlit/Ocean"
                 float3 normal = normalize(tex2D(_NormalMap, i.uv));
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - i.posWorld.xyz);
                 
-                float3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb * _Color.rgb; //Ambient component
+                float3 ambient = _LightColor0.rgb * _Color.rgb; //Ambient component
                 
-                float3 diffuse = _LightColor0.rgb * _Color.rgb * max(0.0, dot(normal, _WorldSpaceLightPos0.xyz)); //Diffuse component
+                float diff = max(dot(normal, _WorldSpaceLightPos0.xyz), 0.0);
+                float3 diffuse = _LightColor0.rgb * _DiffuseColor.rgb * diff; //Diffuse component
+
+                float3 reflectDir = reflect(-_WorldSpaceLightPos0.xyz, normal);
+                float spec = pow(max(dot(viewDirection, reflectDir), 0.0), _Shininess);
+                float3 specular = _LightColor0.rgb * (spec * _SpecColor);  
                 
-                //
-                // float3 vert2LightSource = _WorldSpaceLightPos0.xyz - i.posWorld.xyz;
-                // float oneOverDistance = 1.0 / length(vert2LightSource);
-                // float attenuation = lerp(1.0, oneOverDistance, _WorldSpaceLightPos0.w);
-                // float3 lightDirection = _WorldSpaceLightPos0.xyz - i.posWorld.xyz * _WorldSpaceLightPos0.w;
-                //
-                // float3 ambientLighting = UNITY_LIGHTMODEL_AMBIENT.rgb * _Color.rgb; //Ambient component
-                // float3 diffuseReflection = attenuation * _LightColor0.rgb * _Color.rgb * max(0.0, dot(normal, lightDirection)); //Diffuse component
-                //
-                // // float3 specularReflection;
-                // // if (dot(normal2, lightDirection) < 0.0) //Light on the wrong side - no specular
-                // // {
-                // //     specularReflection = float3(0.0, 0.0, 0.0);
-                // // }
-                // // else
-                // // {
-                // //     //Specular component
-                // //     specularReflection = attenuation * _LightColor0.rgb * _SpecColor.rgb * pow(max(0.0, dot(reflect(-lightDirection, normal), viewDirection)), _Shininess);
-                // // }
-                
-                float3 color = ambient + diffuse;
+                float3 color = ambient + diffuse + specular;
                 
                 return float4(color.rgb, 1);
             }
