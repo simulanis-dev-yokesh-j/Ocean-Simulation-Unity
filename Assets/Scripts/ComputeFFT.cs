@@ -34,7 +34,7 @@ public class ComputeFFT
         _copyToPingPong1Kernel = _fftComputeShader.FindKernel("CopyToPingPong1");
         _permuteAndScaleKernel = _fftComputeShader.FindKernel("PermuteAndScale");
 
-        _butterflyTexture = Utilities.CreateRenderTexture(_logSize, _size, RenderTextureFormat.ARGBHalf);
+        _butterflyTexture = Utilities.CreateRenderTexture(_logSize, _size, RenderTextureFormat.ARGBFloat);
         _pingPong1 = Utilities.CreateRenderTexture(_size, _size);
         
         ComputeButerflyTexture();

@@ -1059,8 +1059,8 @@ MonoBehaviour:
   _lengthScale: 256
   _amplitude: 1
   _speed: 1
-  _windSpeed: 0.5
-  _windAngle: 1
+  _windSpeed: 17
+  _windAngle: 45
   _depth: 500
   _fetch: 100000
   _displacementFactor: 0.9
@@ -1079,7 +1079,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &545947628
 Transform:
   m_ObjectHideFlags: 0

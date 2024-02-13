@@ -18,8 +18,10 @@ public class OceanGenerator : MonoBehaviour
     [System.Serializable]
     public struct InitSpectrumData
     {
-        public int Kernel;
+        public int InitKernel;
+        public int WrapperKernel;
         public RenderTexture InitSpectrum;
+        public RenderTexture ConjugatedSpectrum;
         public RenderTexture WaveData;
         public Texture2D GaussianNoise;
     }
@@ -64,7 +66,7 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private float _amplitude = 1f;
     [SerializeField] private float _speed = 1f;
     [SerializeField] private float _windSpeed = 10f;
-    [SerializeField] private float _windAngle = 1;
+    [SerializeField, Range(0, 360)] private float _windAngle = 1;
     [SerializeField] private float _depth = 1000f;
     [SerializeField] private float _fetch = 1000f;
     [SerializeField] private float _displacementFactor = 0.8f;
@@ -137,12 +139,14 @@ public class OceanGenerator : MonoBehaviour
 
     private void InitRenderTextures()
     {
-        _initSpectrumData.Kernel = _computeShaders.InitSpectrum.FindKernel("CalculateInitSpectrum");
+        _initSpectrumData.InitKernel = _computeShaders.InitSpectrum.FindKernel("CalculateInitSpectrum");
+        _initSpectrumData.WrapperKernel = _computeShaders.InitSpectrum.FindKernel("ConjugateInitSpectrum");
         _timeDependantSpectrumData.Kernel = _computeShaders.TimeDependantSpectrum.FindKernel("CalculateFrequencyDomain");
         _spectrumWrapperData.Kernel = _computeShaders.SpectrumWrapper.FindKernel("ComputeWrapper");
         
-        _initSpectrumData.InitSpectrum = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
-        _initSpectrumData.WaveData = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
+        _initSpectrumData.InitSpectrum = Utilities.CreateRenderTexture(_size);
+        _initSpectrumData.ConjugatedSpectrum = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _initSpectrumData.WaveData = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _initSpectrumData.GaussianNoise = GenerateGaussianNoise(_size);
         _timeDependantSpectrumData.FrequencyDomain = Utilities.CreateRenderTexture(_size);
         _timeDependantSpectrumData.HeightMap = Utilities.CreateRenderTexture(_size);
@@ -150,13 +154,13 @@ public class OceanGenerator : MonoBehaviour
         _timeDependantSpectrumData.BitangentMap = Utilities.CreateRenderTexture(_size);
         _timeDependantSpectrumData.DisplacementMapX = Utilities.CreateRenderTexture(_size);
         _timeDependantSpectrumData.DisplacementMapZ = Utilities.CreateRenderTexture(_size);
-        _spectrumWrapperData.DisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
-        _spectrumWrapperData.NormalMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBHalf);
+        _spectrumWrapperData.DisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _spectrumWrapperData.NormalMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
     }
 
     private void GenerateInitSpectrum()
     {
-        int kernel = _initSpectrumData.Kernel;
+        int kernel = _initSpectrumData.InitKernel;
         ComputeShader shader = _computeShaders.InitSpectrum;
     
         // Set variables
@@ -173,6 +177,14 @@ public class OceanGenerator : MonoBehaviour
 
         // Dispatch the compute shader
         _commandBuffer.DispatchCompute(_computeShaders.InitSpectrum, kernel, _size / 8, _size / 8, 1);
+        
+        kernel = _initSpectrumData.WrapperKernel;
+        
+        _commandBuffer.SetComputeIntParam(shader, "Size", _size);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.InitSpectrum);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "ConjugatedSpectrum", _initSpectrumData.ConjugatedSpectrum);
+        
+        _commandBuffer.DispatchCompute(_computeShaders.InitSpectrum, kernel, _size / 8, _size / 8, 1);
     }
 
     private void GenerateFrequencyDomain()
@@ -183,7 +195,7 @@ public class OceanGenerator : MonoBehaviour
         // Set variables
         _commandBuffer.SetComputeFloatParam(shader, "Time", _time);
         _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _displacementFactor);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.InitSpectrum);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.ConjugatedSpectrum);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "WaveData", _initSpectrumData.WaveData);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "FrequencyDomain", _timeDependantSpectrumData.FrequencyDomain);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);

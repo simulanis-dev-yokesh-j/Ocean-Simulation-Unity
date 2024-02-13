@@ -1,5 +1,6 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CalculateInitSpectrum
+#pragma kernel ConjugateInitSpectrum
 
 #define PI 3.1415926
 #define G 9.81
@@ -16,25 +17,22 @@ float Fetch;
 float Depth;
 
 // Outputs
-RWTexture2D<float4> InitSpectrum;
+RWTexture2D<float2> InitSpectrum;
+RWTexture2D<float4> ConjugatedSpectrum;
 RWTexture2D<float4> WaveData;
 
 float DispersionPeak()
 {
-    return 22 * pow(WindSpeed * Fetch / G / G, -0.33f);
+    return 22 * pow(G * G / (WindSpeed * Fetch), 0.33);
 }
 
 float WaveDispersion(float kLength)
 {
-    //return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
     return sqrt(G * kLength);
 }
 
 float DispersionDerivative(float kLength)
 {
-    // float th = tanh(min(kLength * Depth, 20));
-    // float ch = cosh(kLength * Depth);
-    // return G * (Depth * kLength / ch / ch + th) / WaveDispersion(kLength) / 2;
     return G / (2 * sqrt(G * kLength));
 }
 
@@ -45,7 +43,7 @@ float fmod(float a, float b)
 
 float WaveAngle(float2 k)
 {
-    float windAngle = WindAngle / 180 * PI;
+    const float windAngle = WindAngle / 180 * PI;
     float angle = atan2(k.y, k.x) - windAngle;
 
     // Normalize the angle to the range [-PI, PI]
@@ -121,16 +119,6 @@ float2 FourierWaveAmplitude(float2 pos, float2 k, float dispersion, float angle)
     float2 rand = float2(Noise[pos.xy].x, Noise[pos.xy].y);
 
     return rand * sqrt(2 * Spectrum(kLength, dispersion, angle) * deltaK * deltaK);
-    //return 1 / sqrt(2) * rand * sqrt(JONSWAP(dispersion) * DirectionalSpread(dispersion, angle));
-}
-
-float2 FourierWaveAmplitudeConj(float2 pos, float2 k, float dispersion, float angle)
-{
-    float deltaK = 2 * PI / LengthScale;
-    float kLength = length(k);
-    float2 rand = float2(Noise[pos.xy].z, Noise[pos.xy].w);
-
-    return rand * sqrt(2 * Spectrum(kLength, dispersion, angle) * deltaK * deltaK);
 }
 
 float2 WaveVector(float2 pos)
@@ -147,10 +135,6 @@ float2 WaveVector(float2 pos)
     }
     
     return k;
-    // float deltaK = 2 * PI / LengthScale;
-    // int nx = pos.x - Size / 2;
-    // int nz = pos.y - Size / 2;
-    // return  float2(nx, nz) * deltaK;
 }
 
 [numthreads(8,8,1)]
@@ -162,8 +146,15 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
     float angle = WaveAngle(k);
     
     float2 h_0 = FourierWaveAmplitude(id.xy, k, dispersion, angle);
-    float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k, dispersion, angle); 
-    
-    InitSpectrum[id.xy] = float4(h_0.x, h_0.y, h_1.x, h_1.y);
+
+    InitSpectrum[id.xy] = float2(h_0.xy);
     WaveData[id.xy] = float4(k.x, k.y, dispersion, 1);
+}
+
+[numthreads(8,8,1)]
+void ConjugateInitSpectrum (uint3 id : SV_DispatchThreadID)
+{
+    float2 h_0 = InitSpectrum[id.xy];
+    float2 h_minus_k = InitSpectrum[uint2((Size - id.x) % Size, (Size - id.y) % Size)];
+    ConjugatedSpectrum[id.xy] = float4(h_0.xy, h_minus_k.x, -h_minus_k.y);
 }
