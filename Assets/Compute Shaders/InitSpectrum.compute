@@ -1,59 +1,136 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CalculateInitSpectrum
 
-#define PI 3.14159265359
+#define PI 3.1415926
 #define G 9.81
 
 // Inputs
 uint Size;
 uint LengthScale;
+Texture2D Noise;
+
 float Amplitude;
 float WindSpeed;
-float2 WindDirection;
+float WindAngle;
+float Fetch;
 float Depth;
-Texture2D Noise;
 
 // Outputs
 RWTexture2D<float4> InitSpectrum;
 RWTexture2D<float4> WaveData;
 
-float PhillipsSpectrum(float2 waveVector)
+float DispersionPeak()
 {
-    float L = WindSpeed * WindSpeed / G;
-    float l = L / 2000;
-    
-    float kLength = length(waveVector);
-
-    if(kLength < 0.0001)
-        return 0;
-    
-    float dominator = exp(-1 / (kLength * kLength * L * L));
-    float nominator = kLength * kLength * kLength * kLength;
-    float k_dot_w = dot(normalize(waveVector), WindDirection);
-    float surpression = exp(-kLength * kLength * l * l);
-    float k_dot_w_8 = k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w * k_dot_w;
-    float result = Amplitude * dominator / nominator * k_dot_w_8 * surpression; 
-    
-    return result;
+    return 22 * pow(WindSpeed * Fetch / G / G, -0.33f);
 }
 
-float WaveDispertion(float kLength)
+float WaveDispersion(float kLength)
 {
-    return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
+    //return sqrt(G * kLength * tanh(min(kLength * Depth, 20)));
+    return sqrt(G * kLength);
 }
 
-float2 FourierWaveAmplitude(float2 pos, float2 k)
+float DispersionDerivative(float kLength)
 {
+    // float th = tanh(min(kLength * Depth, 20));
+    // float ch = cosh(kLength * Depth);
+    // return G * (Depth * kLength / ch / ch + th) / WaveDispersion(kLength) / 2;
+    return G / (2 * sqrt(G * kLength));
+}
+
+float fmod(float a, float b)
+{
+    return a - b * floor(a / b);
+}
+
+float WaveAngle(float2 k)
+{
+    float windAngle = WindAngle / 180 * PI;
+    float angle = atan2(k.y, k.x) - windAngle;
+
+    // Normalize the angle to the range [-PI, PI]
+    angle = fmod(angle + PI, 2 * PI);
+    if (angle < 0)
+        angle += 2 * PI;
+    return angle - PI;
+}
+
+float TMACorrection(float dispersion)
+{
+    float omegaH = dispersion * sqrt(Depth / G);
+
+    if(omegaH <= 1)
+        return 0.5 * omegaH * omegaH;
+    if(omegaH < 2)
+        return 1 - 0.5 * (2 - omegaH) * (2 - omegaH);
+    
+    return 1; 
+}
+
+float JONSWAP(float dispersion)
+{
+    float alpha = 0.076 * pow(WindSpeed * WindSpeed / (Fetch * G), 0.22);
+    float omega_p = DispersionPeak();
+    float sigma = dispersion <= omega_p ? 0.07 : 0.09;
+    float r = exp(-(dispersion - omega_p) * (dispersion - omega_p) / (2 * sigma * sigma * omega_p * omega_p));
+    
+    float firstPart = alpha * G * G / (dispersion * dispersion * dispersion * dispersion * dispersion);
+    float secondPart = exp(-1.25 * pow(omega_p / dispersion, 4));
+    float thirdPart = pow(3.3, r);
+
+    return TMACorrection(dispersion) * firstPart * secondPart * thirdPart;
+}
+
+float DirectionalSpread(float dispersion, float angle)
+{
+    float omega_p = DispersionPeak();
+    float omegaOverOmegaPeek = dispersion / omega_p;
+    float beta;
+
+    if(omegaOverOmegaPeek < 0.95)
+    {
+        beta = 2.61 * pow(omegaOverOmegaPeek, 1.3);
+    }
+    else if(0.95 <= omegaOverOmegaPeek && omegaOverOmegaPeek <= 1.6)
+    {
+        beta = 2.28 * pow(omegaOverOmegaPeek, -1.3);
+    }
+    else
+    {
+        float epsilon = -0.4 + 0.8393 * exp(-0.567 * log(omegaOverOmegaPeek * omegaOverOmegaPeek));
+        beta = pow(10, epsilon);
+    }
+    
+    float sech = 1 / cosh(beta * angle);
+    
+    float firstPart = beta / (2 * tanh(beta * PI));
+    float secondPart = sech * sech;
+
+    return firstPart * secondPart;
+}
+
+float Spectrum(float kLength, float dispersion, float angle)
+{
+    return JONSWAP(dispersion) * DirectionalSpread(dispersion, angle) * DispersionDerivative(kLength) / kLength;
+}
+
+float2 FourierWaveAmplitude(float2 pos, float2 k, float dispersion, float angle)
+{
+    float deltaK = 2 * PI / LengthScale;
+    float kLength = length(k);
     float2 rand = float2(Noise[pos.xy].x, Noise[pos.xy].y);
 
-    return 1 / sqrt(2) * rand * sqrt(PhillipsSpectrum(k));
+    return rand * sqrt(2 * Spectrum(kLength, dispersion, angle) * deltaK * deltaK);
+    //return 1 / sqrt(2) * rand * sqrt(JONSWAP(dispersion) * DirectionalSpread(dispersion, angle));
 }
 
-float2 FourierWaveAmplitudeConj(float2 pos, float2 k)
+float2 FourierWaveAmplitudeConj(float2 pos, float2 k, float dispersion, float angle)
 {
+    float deltaK = 2 * PI / LengthScale;
+    float kLength = length(k);
     float2 rand = float2(Noise[pos.xy].z, Noise[pos.xy].w);
 
-    return 1 / sqrt(2) * rand * sqrt(PhillipsSpectrum(k));
+    return rand * sqrt(2 * Spectrum(kLength, dispersion, angle) * deltaK * deltaK);
 }
 
 float2 WaveVector(float2 pos)
@@ -61,8 +138,19 @@ float2 WaveVector(float2 pos)
     float n = Size / 2;
     float k_x = 2 * PI * (pos.x - n) / LengthScale;
     float k_z = 2 * PI * (pos.y - n) / LengthScale;
+    float2 k = float2(k_x, k_z);
+
+    if (length(k) == 0)
+    {
+        k.x = 0.0001;
+        k.y = 0.0001;
+    }
     
-    return float2(k_x, k_z);
+    return k;
+    // float deltaK = 2 * PI / LengthScale;
+    // int nx = pos.x - Size / 2;
+    // int nz = pos.y - Size / 2;
+    // return  float2(nx, nz) * deltaK;
 }
 
 [numthreads(8,8,1)]
@@ -70,11 +158,12 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
 {
     float2 k = WaveVector(id.xy);
     float kLength = length(k);
-    float dispertion = WaveDispertion(kLength);
+    float dispersion = WaveDispersion(kLength);
+    float angle = WaveAngle(k);
     
-    float2 h_0 = FourierWaveAmplitude(id.xy, k);
-    float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k); 
+    float2 h_0 = FourierWaveAmplitude(id.xy, k, dispersion, angle);
+    float2 h_1 = FourierWaveAmplitudeConj(id.xy, -k, dispersion, angle); 
     
     InitSpectrum[id.xy] = float4(h_0.x, h_0.y, h_1.x, h_1.y);
-    WaveData[id.xy] = float4(k.x, k.y, dispertion, 1);
+    WaveData[id.xy] = float4(k.x, k.y, dispersion, 1);
 }

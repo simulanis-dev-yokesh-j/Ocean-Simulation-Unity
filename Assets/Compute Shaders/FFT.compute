@@ -168,7 +168,8 @@ void PermuteAndScale (uint3 id : SV_DispatchThreadID)
     uint index = int((id.x + id.y) % 2);
     float perm = perms[index];
     
-    float h = perm * (PingPong1[id.xy].x / float(Size * Size));
+    // float h = perm * (PingPong1[id.xy].x / float(Size * Size));
+    float h = perm * PingPong1[id.xy].x;
     PingPong0[id.xy] = float4(h, h, h, 1);
 }
 

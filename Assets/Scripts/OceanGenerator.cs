@@ -61,11 +61,12 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private int _seed = 10;
     [SerializeField] private int _size = 512;
     [SerializeField] private int _lengthScale = 1024;
-    [SerializeField] private float _speed = 10f;
-    [SerializeField] private float _amplitude = 0.6f;
+    [SerializeField] private float _amplitude = 1f;
+    [SerializeField] private float _speed = 1f;
     [SerializeField] private float _windSpeed = 10f;
-    [SerializeField] private Vector2 _windDirection = new Vector2(1, 1);
+    [SerializeField] private float _windAngle = 1;
     [SerializeField] private float _depth = 1000f;
+    [SerializeField] private float _fetch = 1000f;
     [SerializeField] private float _displacementFactor = 0.8f;
     private float _time = 0f;
     
@@ -116,6 +117,11 @@ public class OceanGenerator : MonoBehaviour
     
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            Utilities.OutputTexture(_timeDependantSpectrumData.FrequencyDomain);
+        }
+        
         _time += Time.deltaTime * _speed;
         GenerateFrequencyDomain();
         GenerateHeightMap();
@@ -124,7 +130,7 @@ public class OceanGenerator : MonoBehaviour
         Graphics.ExecuteCommandBuffer(_commandBuffer);
         _commandBuffer.Clear();
         
-        _spectrumMapImage.texture = _timeDependantSpectrumData.FrequencyDomain;
+        _spectrumMapImage.texture = _initSpectrumData.InitSpectrum;
         _hightMapImage.texture = _timeDependantSpectrumData.HeightMap;
         _normalMapImage.texture = _spectrumWrapperData.NormalMap;
     }
@@ -158,7 +164,8 @@ public class OceanGenerator : MonoBehaviour
         _commandBuffer.SetComputeIntParam(shader, "LengthScale", _lengthScale);
         _commandBuffer.SetComputeFloatParam(shader, "Amplitude", _amplitude);
         _commandBuffer.SetComputeFloatParam(shader, "WindSpeed", _windSpeed);
-        _commandBuffer.SetComputeVectorParam(shader, "WindDirection", _windDirection.normalized);
+        _commandBuffer.SetComputeFloatParam(shader, "WindAngle", _windAngle);
+        _commandBuffer.SetComputeFloatParam(shader, "Fetch", _fetch);
         _commandBuffer.SetComputeFloatParam(shader, "Depth", _depth);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "Noise", _initSpectrumData.GaussianNoise);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.InitSpectrum);
