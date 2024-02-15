@@ -43,7 +43,7 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     // w(k)
     float dispertion = WaveData[id.xy].z;
     float2 k =  WaveData[id.xy].xy;
-    float oneOverKLength = 1 / max(0.001, length(k));
+    float oneOverKLength = 1 / length(k);
     
     // real time
     float phase = dispertion * Time;

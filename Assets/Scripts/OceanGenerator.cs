@@ -63,10 +63,10 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private int _seed = 10;
     [SerializeField] private int _size = 512;
     [SerializeField] private int _lengthScale = 1024;
-    [SerializeField] private float _amplitude = 1f;
     [SerializeField] private float _speed = 1f;
     [SerializeField] private float _windSpeed = 10f;
     [SerializeField, Range(0, 360)] private float _windAngle = 1;
+    [SerializeField] private float _swell = 1;
     [SerializeField] private float _depth = 1000f;
     [SerializeField] private float _fetch = 1000f;
     [SerializeField] private float _displacementFactor = 0.8f;
@@ -121,7 +121,7 @@ public class OceanGenerator : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.I))
         {
-            Utilities.OutputTexture(_timeDependantSpectrumData.FrequencyDomain);
+            Utilities.OutputTexture(_initSpectrumData.InitSpectrum);
         }
         
         _time += Time.deltaTime * _speed;
@@ -166,9 +166,9 @@ public class OceanGenerator : MonoBehaviour
         // Set variables
         _commandBuffer.SetComputeIntParam(shader, "Size", _size);
         _commandBuffer.SetComputeIntParam(shader, "LengthScale", _lengthScale);
-        _commandBuffer.SetComputeFloatParam(shader, "Amplitude", _amplitude);
         _commandBuffer.SetComputeFloatParam(shader, "WindSpeed", _windSpeed);
         _commandBuffer.SetComputeFloatParam(shader, "WindAngle", _windAngle);
+        _commandBuffer.SetComputeFloatParam(shader, "Swell", _swell);
         _commandBuffer.SetComputeFloatParam(shader, "Fetch", _fetch);
         _commandBuffer.SetComputeFloatParam(shader, "Depth", _depth);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "Noise", _initSpectrumData.GaussianNoise);

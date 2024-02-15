@@ -10,9 +10,9 @@ uint Size;
 uint LengthScale;
 Texture2D Noise;
 
-float Amplitude;
 float WindSpeed;
 float WindAngle;
+float Swell;
 float Fetch;
 float Depth;
 
@@ -39,6 +39,15 @@ float DispersionDerivative(float kLength)
 float fmod(float a, float b)
 {
     return a - b * floor(a / b);
+}
+
+float GammaApprox(float x)
+{
+    float g2 = x * x;
+    float g3 = g2 * x;
+    float g4 = g3 *x;
+    
+    return g4;
 }
 
 float WaveAngle(float2 k)
@@ -79,7 +88,35 @@ float JONSWAP(float dispersion)
     return TMACorrection(dispersion) * firstPart * secondPart * thirdPart;
 }
 
-float DirectionalSpread(float dispersion, float angle)
+float NormalisationFactor(float s)
+{
+    // float gamma1 = GammaApprox(s + 1);
+    // float gamma2 = GammaApprox(2 * s + 1);
+    //
+    // float firstPart = pow(2, 2 * s - 1) / PI;
+    // float secondPart = gamma1 * gamma1 / gamma2;
+    //
+    // return firstPart * secondPart;
+
+    float s2 = s * s;
+    float s3 = s2 * s;
+    float s4 = s3 * s;
+    
+    if (s < 5)
+        return -0.000564 * s4 + 0.00776 * s3 - 0.044 * s2 + 0.192 * s + 0.163;
+    else
+        return -4.80e-08 * s4 + 1.07e-05 * s3 - 9.53e-04 * s2 + 5.90e-02 * s + 3.93e-01;
+}
+
+float SwellSpread(float dispersion, float angle)
+{
+    const float s = 16 * tanh(DispersionPeak() / dispersion) * Swell * Swell;
+    const float norm = NormalisationFactor(s);
+    
+    return norm * pow(abs(cos(angle / 2)), 2 * s);
+}
+
+float BaseSpread(float dispersion, float angle)
 {
     float omega_p = DispersionPeak();
     float omegaOverOmegaPeek = dispersion / omega_p;
@@ -106,6 +143,29 @@ float DirectionalSpread(float dispersion, float angle)
 
     return firstPart * secondPart;
 }
+
+// float DirectionNormal(float2 a, float2 b, int n)
+// {
+//     float base = BaseSpread(dispersion, angle);
+//     float swell = SwellSpread(dispersion, angle);
+//     float func = base * swell;
+//
+//     float2 h = (b - a) / n;
+//     float4 s = f(a) + f(b);
+//     for (int i = 1; i < n; i++)
+//     {
+//         s += 2 * f(a + i * h);
+//     }
+//     return length(h) / 2 * s;
+// }
+
+float DirectionalSpread(float dispersion, float angle)
+{
+    float base = BaseSpread(dispersion, angle);
+    float swell = SwellSpread(dispersion, angle);
+    return base;
+}
+
 
 float Spectrum(float kLength, float dispersion, float angle)
 {
@@ -147,14 +207,14 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
     
     float2 h_0 = FourierWaveAmplitude(id.xy, k, dispersion, angle);
 
-    InitSpectrum[id.xy] = float2(h_0.xy);
+    InitSpectrum[id.xy] = float2(h_0.xy) * 100;
     WaveData[id.xy] = float4(k.x, k.y, dispersion, 1);
 }
 
 [numthreads(8,8,1)]
 void ConjugateInitSpectrum (uint3 id : SV_DispatchThreadID)
 {
-    float2 h_0 = InitSpectrum[id.xy];
-    float2 h_minus_k = InitSpectrum[uint2((Size - id.x) % Size, (Size - id.y) % Size)];
+    float2 h_0 = InitSpectrum[id.xy] / 100;
+    float2 h_minus_k = InitSpectrum[uint2((Size - id.x) % Size, (Size - id.y) % Size)] / 100;
     ConjugatedSpectrum[id.xy] = float4(h_0.xy, h_minus_k.x, -h_minus_k.y);
 }
