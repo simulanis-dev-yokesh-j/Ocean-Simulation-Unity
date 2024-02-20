@@ -267,6 +267,7 @@ public class OceanGenerator : MonoBehaviour
         //Create mesh
         Mesh mesh = new Mesh();
         mesh.name = "Ocean Mesh";
+        mesh.indexFormat = IndexFormat.UInt32;
         mesh.vertices = vertices;
         mesh.uv = uvs;
         mesh.triangles = triangles;

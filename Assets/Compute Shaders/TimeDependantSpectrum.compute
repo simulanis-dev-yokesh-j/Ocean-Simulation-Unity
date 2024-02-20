@@ -58,12 +58,12 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     float2 tangent = ih * k.x;
     float2 bitangent = ih * k.y;
     
-    float2 vectorFieldX = -DisplacementFactor * ih * -k.x * oneOverKLength;
-    float2 vectorFieldZ = -DisplacementFactor * ih * -k.y * oneOverKLength;
+    float2 displacementX = DisplacementFactor * oneOverKLength * ih * k.x;
+    float2 displacementZ = DisplacementFactor * oneOverKLength * ih * k.y;
     
     FrequencyDomain[id.xy] = float2(h.x, h.y);
     TangentMap[id.xy] = float2(tangent.x, tangent.y);
     BitangentMap[id.xy] = float2(bitangent.x, bitangent.y);
-    DisplacementMapX[id.xy] = float2(vectorFieldX.x, vectorFieldX.y);
-    DisplacementMapZ[id.xy] = float2(vectorFieldZ.x, vectorFieldZ.y);
+    DisplacementMapX[id.xy] = float2(displacementX.xy);
+    DisplacementMapZ[id.xy] = float2(displacementZ.xy);
 }

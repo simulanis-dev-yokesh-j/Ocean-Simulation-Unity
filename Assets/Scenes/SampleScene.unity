@@ -1053,7 +1053,7 @@ MonoBehaviour:
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
   _normalMapImage: {fileID: 783113521}
-  _resolution: 200
+  _resolution: 512
   _seed: 10
   _size: 512
   _lengthScale: 512
@@ -1089,7 +1089,7 @@ Transform:
   m_GameObject: {fileID: 545947627}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 81.535355, y: -82.53936, z: 11.499221}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
