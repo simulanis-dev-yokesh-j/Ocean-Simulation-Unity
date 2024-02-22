@@ -17,7 +17,7 @@ Shader "Unlit/Ocean"
         _Tweak1("Tweak1", Float) = 0.05
         _Tweak2("Tweak2", Float) = 0.5
         _Tweak3("Tweak3", Float) = 0.5
-        _Tweak4("Tweak4", Float) = 0.5
+        _RefractiveIndex("Refractive Index", Float) = 1.33
     }
     SubShader
     {
@@ -48,7 +48,7 @@ Shader "Unlit/Ocean"
             uniform float _Tweak1;
             uniform float _Tweak2;
             uniform float _Tweak3;
-            uniform float _Tweak4;
+            uniform float _RefractiveIndex;
 
             struct appdata
             {
@@ -77,6 +77,11 @@ Shader "Unlit/Ocean"
                 return o;
             }
 
+            float DotClamped(float3 a, float3 b)
+            {
+                return max(0, dot(a, b));
+            }
+
             fixed4 frag (v2f i) : SV_Target
             {
                 float3 pos = i.posWorld.xyz;
@@ -84,38 +89,22 @@ Shader "Unlit/Ocean"
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
                 float3 halfVector = normalize(sunDirection + viewDirection);
                 float3 normal = normalize(tex2D(_NormalMap, i.uv));
-                float height = max(0, i.posWorld.y);
+
+                float part3 = _Tweak3 * normal;
+                float3 ambient = part3 * _WaterScatterColor * _LightColor0 + _DensityOfWaterBubbles * _AirBubblesColor * _LightColor0;
                 
-                // float3 normal = normalize(tex2D(_NormalMap, i.uv));
-                // float3 viewDirection = normalize(_WorldSpaceCameraPos - i.posWorld.xyz);
-                //
-                // float3 ambient = _LightColor0.rgb * _Color.rgb; //Ambient component
-                //
-                // float diff = max(dot(normal, _WorldSpaceLightPos0.xyz), 0.0);
-                // float3 diffuse = _LightColor0.rgb * _DiffuseColor.rgb * diff; //Diffuse component
-                //
                 float3 reflectDir = reflect(-_WorldSpaceLightPos0.xyz, normal);
                 float spec = pow(max(dot(viewDirection, reflectDir), 0.0), _Shininess);
                 float3 specular = _LightColor0.rgb * (spec * _SpecColor);  
-                //
-                // float3 color = ambient + diffuse + specular;
-                //
-                // return float4(color.rgb, 1);
 
-
+                float part1 = _Tweak1 * max(0, i.posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f) * pow(0.5f - 0.5f * dot(sunDirection, normal), 3.0f);
+				float part2 = _Tweak2 * pow(DotClamped(viewDirection, normal), 2.0f);
                 
-                float part1 = _Tweak1 * height * pow(max(0, dot(sunDirection, -viewDirection)), 4);
-                float part2 = 0.5 - 0.5 * pow(dot(sunDirection, normal), 3);
-                float part3 = _Tweak2 * pow(max(0, dot(viewDirection, normal)), 2);
-                
-                float3 scatter = (part1 * part2 + part3) * _WaterScatterColor.rgb * _LightColor0.rgb;
+				float3 scatter = (part1 + part2) * _WaterScatterColor * _LightColor0;
 
-                part1 = _Tweak3 * dot(sunDirection, normal) ;
-                part2 = _Tweak4 * _DensityOfWaterBubbles;
-
-                scatter += part1 * _WaterScatterColor.rgb * _LightColor0.rgb + part2 * _AirBubblesColor.rgb * _LightColor0.rgb;
-                
-                return float4(scatter + specular, 1);
+                float3 output = ambient + scatter + specular;
+                            
+                return float4(output, 1);
             }
             ENDCG
         }

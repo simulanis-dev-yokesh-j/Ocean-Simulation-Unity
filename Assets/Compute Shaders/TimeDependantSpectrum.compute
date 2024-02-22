@@ -1,5 +1,4 @@
 #pragma kernel CalculateFrequencyDomain
-#pragma kernel ComputeWrapper
 
 #define PI 3.14159265359
 #define G 9.81
@@ -17,8 +16,7 @@ RWTexture2D<float2> FrequencyDomain;
 RWTexture2D<float2> TangentMap;
 RWTexture2D<float2> BitangentMap;
 RWTexture2D<float4> NormalMap;
-RWTexture2D<float2> DisplacementMapX;
-RWTexture2D<float2> DisplacementMapZ;
+RWTexture2D<float4> HorizontalDisplacementMap;
 
 float2 EulerFormula(float x)
 {
@@ -58,12 +56,16 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     float2 tangent = ih * k.x;
     float2 bitangent = ih * k.y;
     
-    float2 displacementX = DisplacementFactor * oneOverKLength * ih * k.x;
-    float2 displacementZ = DisplacementFactor * oneOverKLength * ih * k.y;
+    float2 displacementX = DisplacementFactor * oneOverKLength * k.x * ih;
+    float2 displacementZ = DisplacementFactor * oneOverKLength * k.y * ih;
+
+    // foam
+    //float2 j_xx = DisplacementFactor * oneOverKLength * k.x * k.x * h;
+    //float2 j_zz = DisplacementFactor * oneOverKLength * k.y * k.y * h;
+    //float2 j_xz = DisplacementFactor * oneOverKLength * k.x * k.y * h;
     
     FrequencyDomain[id.xy] = float2(h.x, h.y);
     TangentMap[id.xy] = float2(tangent.x, tangent.y);
     BitangentMap[id.xy] = float2(bitangent.x, bitangent.y);
-    DisplacementMapX[id.xy] = float2(displacementX.xy);
-    DisplacementMapZ[id.xy] = float2(displacementZ.xy);
+    HorizontalDisplacementMap[id.xy] = float4(displacementX.xy, displacementZ.xy);
 }
