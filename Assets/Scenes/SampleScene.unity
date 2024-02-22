@@ -1063,6 +1063,8 @@ MonoBehaviour:
   _depth: 500
   _distanceToShore: 1000
   _waveChopyFactor: 1.05
+  _foamIntensity: 0.5
+  _foamDecay: 0.1
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0

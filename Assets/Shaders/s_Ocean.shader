@@ -108,8 +108,12 @@ Shader "Unlit/Ocean"
 
                 float foam = tex2D(_FoamMap, i.uv).r;
 
-                if(foam < 0)
-                    output = float3(1, 1, 1);
+                if(foam > 0)
+                {
+                    float3 foamColor = float3(foam, foam, foam);
+                    output = saturate(output + foamColor);
+                }
+                    
                             
                 return float4(output, 1);
             }

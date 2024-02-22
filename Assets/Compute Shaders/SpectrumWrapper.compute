@@ -2,7 +2,10 @@
 #pragma kernel ComputeWrapper
 
 // ====== Inputs ======
+float DeltaTime;
 float DisplacementFactor;
+float FoamIntensity;
+float FoamDecay;
 RWTexture2D<float4> HeightDerivative;
 RWTexture2D<float4> HeightMap;
 RWTexture2D<float4> HorizontalDisplacementMap;
@@ -25,9 +28,14 @@ void ComputeWrapper (uint3 id : SV_DispatchThreadID)
     float j_zz = 1 + DisplacementFactor * JacobianXxZzMap[id.xy].y;
     float j_xz = DisplacementFactor * JacobianXzMap[id.xy].x;
     float jacobian = j_xx * j_zz - j_xz * j_xz;
-    jacobian -= 0.5;
+    jacobian *= -1;
+    jacobian += FoamIntensity;
+    
+    // Foam Accumulation
+    float accumulation = FoamMap[id.xy].x - FoamDecay * DeltaTime / max(jacobian, 0.5);
+    float foam = max(accumulation, jacobian);
 
     NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
     DisplacementMap[id.xy] = float4(DisplacementFactor * HorizontalDisplacementMap[id.xy].x, HeightMap[id.xy].x, DisplacementFactor * HorizontalDisplacementMap[id.xy].y, 1);
-    FoamMap[id.xy] = float4(jacobian, jacobian, jacobian, 1);
+    FoamMap[id.xy] = float4(foam, foam, foam, 1);
 }

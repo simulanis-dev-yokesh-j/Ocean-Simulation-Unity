@@ -72,6 +72,8 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private float _depth = 1000f;
     [SerializeField] private float _distanceToShore = 1000f;
     [SerializeField, Range(0, 2)] private float _waveChopyFactor = 0.8f;
+    [SerializeField, Range(0, 2)] private float _foamIntensity = 0.5f;
+    [SerializeField, Range(0, 1)] private float _foamDecay = 0.1f;
     private float _time = 0f;
     
     // Outputs
@@ -225,7 +227,10 @@ public class OceanGenerator : MonoBehaviour
         int kernel = _spectrumWrapperData.Kernel;
         ComputeShader shader = _computeShaders.SpectrumWrapper;
         
+        _commandBuffer.SetComputeFloatParam(shader, "DeltaTime", Time.deltaTime);
         _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _waveChopyFactor);
+        _commandBuffer.SetComputeFloatParam(shader, "FoamIntensity", _foamIntensity);
+        _commandBuffer.SetComputeFloatParam(shader, "FoamDecay", _foamDecay);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightDerivative", _timeDependantSpectrumData.HeightDerivative);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HorizontalDisplacementMap", _timeDependantSpectrumData.HorizontalDisplacementMap);
