@@ -7,16 +7,15 @@
 uint Size;
 uint LengthScale;
 float Time;
-float DisplacementFactor;
 RWTexture2D<float4> InitSpectrum;
 RWTexture2D<float4> WaveData;
 
 // ====== Outputs ======
-RWTexture2D<float2> FrequencyDomain;
-RWTexture2D<float2> TangentMap;
-RWTexture2D<float2> BitangentMap;
-RWTexture2D<float4> NormalMap;
+RWTexture2D<float4> FrequencyDomain;
+RWTexture2D<float4> HeightDerivative;
 RWTexture2D<float4> HorizontalDisplacementMap;
+RWTexture2D<float4> JacobianXxZzMap;
+RWTexture2D<float2> JacobianXzMap;
 
 float2 EulerFormula(float x)
 {
@@ -56,16 +55,17 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     float2 tangent = ih * k.x;
     float2 bitangent = ih * k.y;
     
-    float2 displacementX = DisplacementFactor * oneOverKLength * k.x * ih;
-    float2 displacementZ = DisplacementFactor * oneOverKLength * k.y * ih;
+    float2 displacementX = oneOverKLength * k.x * ih;
+    float2 displacementZ = oneOverKLength * k.y * ih;
 
     // foam
-    //float2 j_xx = DisplacementFactor * oneOverKLength * k.x * k.x * h;
-    //float2 j_zz = DisplacementFactor * oneOverKLength * k.y * k.y * h;
-    //float2 j_xz = DisplacementFactor * oneOverKLength * k.x * k.y * h;
+    float2 j_xx = oneOverKLength * k.x * k.x * -h;
+    float2 j_zz = oneOverKLength * k.y * k.y * -h;
+    float2 j_xz = oneOverKLength * k.x * k.y * -h;
     
-    FrequencyDomain[id.xy] = float2(h.x, h.y);
-    TangentMap[id.xy] = float2(tangent.x, tangent.y);
-    BitangentMap[id.xy] = float2(bitangent.x, bitangent.y);
+    FrequencyDomain[id.xy] = float4(h.xy, h.xy);
+    HeightDerivative[id.xy] = float4(tangent.x, tangent.y, bitangent.x, bitangent.y);
     HorizontalDisplacementMap[id.xy] = float4(displacementX.xy, displacementZ.xy);
+    JacobianXxZzMap[id.xy] = float4(j_xx.xy, j_zz.xy);
+    JacobianXzMap[id.xy] = float2(j_xz.xy);
 }

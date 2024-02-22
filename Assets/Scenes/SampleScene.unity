@@ -1053,17 +1053,16 @@ MonoBehaviour:
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
   _normalMapImage: {fileID: 783113521}
-  _resolution: 512
+  _resolution: 256
   _seed: 10
   _size: 512
   _lengthScale: 512
   _speed: 1
   _windSpeed: 31
   _windAngle: 45
-  _swell: 0.1
   _depth: 500
-  _fetch: 1200000
-  _displacementFactor: 0.9
+  _distanceToShore: 1000
+  _waveChopyFactor: 1.05
 --- !u!1 &545947627
 GameObject:
   m_ObjectHideFlags: 0

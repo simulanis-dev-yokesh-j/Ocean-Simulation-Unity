@@ -32,9 +32,10 @@ public class OceanGenerator : MonoBehaviour
         public int Kernel;
         public RenderTexture FrequencyDomain;
         public RenderTexture HeightMap;
-        public RenderTexture TangentMap;
-        public RenderTexture BitangentMap;
+        public RenderTexture HeightDerivative;
         public RenderTexture HorizontalDisplacementMap;
+        public RenderTexture JacobianXxZzMap;
+        public RenderTexture JacobianXzMap;
     }
     
     [System.Serializable]
@@ -43,6 +44,7 @@ public class OceanGenerator : MonoBehaviour
         public int Kernel;
         public RenderTexture NormalMap;
         public RenderTexture DisplacementMap;
+        public RenderTexture FoamMap;
     }
     
     [Header("Shaders")]
@@ -84,6 +86,7 @@ public class OceanGenerator : MonoBehaviour
     private MeshRenderer _meshRenderer;
     private static readonly int DisplacementMapID = Shader.PropertyToID("_DisplacementMap");
     private static readonly int NormalMapID = Shader.PropertyToID("_NormalMap");
+    private static readonly int FoamMap = Shader.PropertyToID("_FoamMap");
 
     private void Start()
     {
@@ -100,6 +103,7 @@ public class OceanGenerator : MonoBehaviour
 
         _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
         _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
+        _material.SetTexture(FoamMap, _spectrumWrapperData.FoamMap);
     }
 
     private void OnValidate()
@@ -115,6 +119,7 @@ public class OceanGenerator : MonoBehaviour
         
         _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
         _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
+        _material.SetTexture(FoamMap, _spectrumWrapperData.FoamMap);
     }
     
     private void Update()
@@ -132,9 +137,9 @@ public class OceanGenerator : MonoBehaviour
         Graphics.ExecuteCommandBuffer(_commandBuffer);
         _commandBuffer.Clear();
         
-        _spectrumMapImage.texture = _initSpectrumData.InitSpectrum;
+        _spectrumMapImage.texture = _timeDependantSpectrumData.FrequencyDomain;
         _hightMapImage.texture = _timeDependantSpectrumData.HeightMap;
-        _normalMapImage.texture = _spectrumWrapperData.NormalMap;
+        _normalMapImage.texture = _spectrumWrapperData.FoamMap;
     }
 
     private void InitRenderTextures()
@@ -148,13 +153,17 @@ public class OceanGenerator : MonoBehaviour
         _initSpectrumData.ConjugatedSpectrum = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _initSpectrumData.WaveData = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _initSpectrumData.GaussianNoise = GenerateGaussianNoise(_size);
-        _timeDependantSpectrumData.FrequencyDomain = Utilities.CreateRenderTexture(_size);
-        _timeDependantSpectrumData.HeightMap = Utilities.CreateRenderTexture(_size);
-        _timeDependantSpectrumData.TangentMap = Utilities.CreateRenderTexture(_size);
-        _timeDependantSpectrumData.BitangentMap = Utilities.CreateRenderTexture(_size);
+        
+        _timeDependantSpectrumData.FrequencyDomain = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _timeDependantSpectrumData.HeightMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _timeDependantSpectrumData.HeightDerivative = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _timeDependantSpectrumData.HorizontalDisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _timeDependantSpectrumData.JacobianXxZzMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _timeDependantSpectrumData.JacobianXzMap = Utilities.CreateRenderTexture(_size);
+        
         _spectrumWrapperData.DisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _spectrumWrapperData.NormalMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _spectrumWrapperData.FoamMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
     }
 
     private void GenerateInitSpectrum()
@@ -192,14 +201,14 @@ public class OceanGenerator : MonoBehaviour
     
         // Set variables
         _commandBuffer.SetComputeFloatParam(shader, "Time", _time);
-        _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _waveChopyFactor);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.ConjugatedSpectrum);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "WaveData", _initSpectrumData.WaveData);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "FrequencyDomain", _timeDependantSpectrumData.FrequencyDomain);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "TangentMap", _timeDependantSpectrumData.TangentMap);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "BitangentMap", _timeDependantSpectrumData.BitangentMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightDerivative", _timeDependantSpectrumData.HeightDerivative);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HorizontalDisplacementMap", _timeDependantSpectrumData.HorizontalDisplacementMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXxZzMap", _timeDependantSpectrumData.JacobianXxZzMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXzMap", _timeDependantSpectrumData.JacobianXzMap);
 
         // Dispatch the compute shader
         _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);
@@ -208,19 +217,23 @@ public class OceanGenerator : MonoBehaviour
     private void GenerateHeightMap()
     {
         _fft.DoIFFT(_timeDependantSpectrumData.FrequencyDomain, _timeDependantSpectrumData.HeightMap);
-        _fft.DoIFFT(_timeDependantSpectrumData.TangentMap);
-        _fft.DoIFFT(_timeDependantSpectrumData.BitangentMap);
+        _fft.DoIFFT(_timeDependantSpectrumData.HeightDerivative);
         _fft.DoIFFT(_timeDependantSpectrumData.HorizontalDisplacementMap);
+        _fft.DoIFFT(_timeDependantSpectrumData.JacobianXxZzMap);
+        _fft.DoIFFT(_timeDependantSpectrumData.JacobianXzMap);
 
         int kernel = _spectrumWrapperData.Kernel;
         ComputeShader shader = _computeShaders.SpectrumWrapper;
         
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "TangentMap", _timeDependantSpectrumData.TangentMap);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "BitangentMap", _timeDependantSpectrumData.BitangentMap);
+        _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _waveChopyFactor);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightDerivative", _timeDependantSpectrumData.HeightDerivative);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HorizontalDisplacementMap", _timeDependantSpectrumData.HorizontalDisplacementMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXxZzMap", _timeDependantSpectrumData.JacobianXxZzMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXzMap", _timeDependantSpectrumData.JacobianXzMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "NormalMap", _spectrumWrapperData.NormalMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMap", _spectrumWrapperData.DisplacementMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "FoamMap", _spectrumWrapperData.FoamMap);
 
         _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);
     }

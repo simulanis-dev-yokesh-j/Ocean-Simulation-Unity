@@ -10,6 +10,7 @@ Shader "Unlit/Ocean"
         _Shininess ("Shininess", Float) = 10
         _DisplacementMap("Displacement Map", 2D) = "white" {}
         _NormalMap("Normal Map", 2D) = "bump" {}
+        _FoamMap("Foam Map", 2D) = "white" {}
         
         _WaterScatterColor("Water Scatter Color", Color) = (1, 1, 1, 1)
         _AirBubblesColor("Air Bubbles Color", Color) = (1, 1, 1, 1)
@@ -41,6 +42,7 @@ Shader "Unlit/Ocean"
             uniform float _Shininess;
             uniform sampler2D_half _DisplacementMap;
             uniform sampler2D_half _NormalMap;
+            uniform sampler2D_half _FoamMap;
 
             uniform float4 _WaterScatterColor;
             uniform float4 _AirBubblesColor;
@@ -103,6 +105,11 @@ Shader "Unlit/Ocean"
 				float3 scatter = (part1 + part2) * _WaterScatterColor * _LightColor0;
 
                 float3 output = ambient + scatter + specular;
+
+                float foam = tex2D(_FoamMap, i.uv).r;
+
+                if(foam < 0)
+                    output = float3(1, 1, 1);
                             
                 return float4(output, 1);
             }

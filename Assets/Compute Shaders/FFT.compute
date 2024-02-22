@@ -108,7 +108,7 @@ void HorizontalOperation (uint3 id : SV_DispatchThreadID)
         h1 = topSignal1 + ComplexMult(twiddle, bottomSignal1);
         h2 = topSignal2 + ComplexMult(twiddle, bottomSignal2);
     
-        PingPong1[id.xy] = float4(h1.x, h1.y, h2.x, h2.y);
+        PingPong1[id.xy] = float4(h1.xy, h2.xy);
     }
     else
     {
@@ -123,7 +123,7 @@ void HorizontalOperation (uint3 id : SV_DispatchThreadID)
         h1 = topSignal1 + ComplexMult(twiddle, bottomSignal1);
         h2 = topSignal2 + ComplexMult(twiddle, bottomSignal2);
     
-        PingPong0[id.xy] = float4(h1.x, h1.y, h2.x, h2.y);
+        PingPong0[id.xy] = float4(h1.xy, h2.xy);
     }
 }
 
@@ -153,7 +153,7 @@ void VerticalOperation (uint3 id : SV_DispatchThreadID)
         h1 = topSignal1 + ComplexMult(twiddle, bottomSignal1);
         h2 = topSignal2 + ComplexMult(twiddle, bottomSignal2);
     
-        PingPong1[id.xy] = float4(h1.x, h1.y, h2.x, h2.y);
+        PingPong1[id.xy] = float4(h1.xy, h2.xy);
     }
     else
     {
@@ -168,7 +168,7 @@ void VerticalOperation (uint3 id : SV_DispatchThreadID)
         h1 = topSignal1 + ComplexMult(twiddle, bottomSignal1);
         h2 = topSignal2 + ComplexMult(twiddle, bottomSignal2);
     
-        PingPong0[id.xy] = float4(h1.x, h1.y, h2.x, h2.y);
+        PingPong0[id.xy] = float4(h1.xy, h2.xy);
     }
 }
 
