@@ -1053,7 +1053,7 @@ MonoBehaviour:
   _spectrumMapImage: {fileID: 2138357741}
   _hightMapImage: {fileID: 295894770}
   _normalMapImage: {fileID: 783113521}
-  _resolution: 256
+  _resolution: 512
   _seed: 10
   _size: 512
   _lengthScale: 512

@@ -89,6 +89,7 @@ public class OceanGenerator : MonoBehaviour
     private static readonly int DisplacementMapID = Shader.PropertyToID("_DisplacementMap");
     private static readonly int NormalMapID = Shader.PropertyToID("_NormalMap");
     private static readonly int FoamMap = Shader.PropertyToID("_FoamMap");
+    private static readonly int LengthScale = Shader.PropertyToID("_LengthScale");
 
     private void Start()
     {
@@ -106,6 +107,7 @@ public class OceanGenerator : MonoBehaviour
         _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
         _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
         _material.SetTexture(FoamMap, _spectrumWrapperData.FoamMap);
+        _material.SetFloat(LengthScale, _lengthScale);
     }
 
     private void OnValidate()
@@ -118,10 +120,12 @@ public class OceanGenerator : MonoBehaviour
         
         InitRenderTextures();
         GenerateInitSpectrum();
+        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
         
         _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
         _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
         _material.SetTexture(FoamMap, _spectrumWrapperData.FoamMap);
+        _material.SetFloat(LengthScale, _lengthScale);
     }
     
     private void Update()
@@ -246,48 +250,82 @@ public class OceanGenerator : MonoBehaviour
     private void GeneratePlane(int size, int resolution)
     {
         Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
-        Vector2[] uvs = new Vector2[vertices.Length];
         int[] triangles = new int[resolution * resolution * 6];
-
+    
         float increment = 1f / resolution;
         int vertIndex = 0;
         int triIndex = 0;
-
+    
         // Create vertices and triangles
         for (int y = 0; y <= resolution; y++)
         {
             for (int x = 0; x <= resolution; x++)
             {
                 vertices[vertIndex] = new Vector3(size * (x * increment - .5f), 0, size * (y * increment - .5f));
-                uvs[vertIndex] = new Vector2(x * increment, y * increment);
-                
+    
                 if (x != resolution && y != resolution)
                 {
                     triangles[triIndex] = vertIndex;
                     triangles[triIndex + 1] = vertIndex + resolution + 1;
                     triangles[triIndex + 2] = vertIndex + resolution + 2;
-
+    
                     triangles[triIndex + 3] = vertIndex;
                     triangles[triIndex + 4] = vertIndex + resolution + 2;
                     triangles[triIndex + 5] = vertIndex + 1;
-
+    
                     triIndex += 6;
                 }
                 vertIndex++;
             }
         }
-
+    
         //Create mesh
         Mesh mesh = new Mesh();
         mesh.name = "Ocean Mesh";
         mesh.indexFormat = IndexFormat.UInt32;
         mesh.vertices = vertices;
-        mesh.uv = uvs;
         mesh.triangles = triangles;
-
+    
         //Assign mesh to mesh filter
         _meshFilter.mesh = mesh;
     }
+
+    // private void GeneratePlane(int size, int resolution)
+    // {
+    //     Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
+    //     int[] triangles = new int[resolution * resolution * 6];
+    //
+    //     // Create vertices
+    //     for (int i = 0, y = 0; y <= resolution; y++)
+    //     {
+    //         for (int x = 0; x <= resolution; x++, i++)
+    //         {
+    //             vertices[i] = new Vector3(x * size / resolution, 0, y * size / resolution);
+    //         }
+    //     }
+    //
+    //     // Create triangular grid
+    //     for (int ti = 0, vi = 0, y = 0; y < resolution; y++, vi++)
+    //     {
+    //         for (int x = 0; x < resolution; x++, ti += 6, vi++)
+    //         {
+    //             triangles[ti] = vi;
+    //             triangles[ti + 3] = triangles[ti + 2] = vi + 1;
+    //             triangles[ti + 4] = triangles[ti + 1] = vi + resolution + 1;
+    //             triangles[ti + 5] = vi + resolution + 2;
+    //         }
+    //     }
+    //
+    //     //Create mesh
+    //     Mesh mesh = new Mesh();
+    //     mesh.name = "Ocean Mesh";
+    //     mesh.indexFormat = IndexFormat.UInt32;
+    //     mesh.vertices = vertices;
+    //     mesh.triangles = triangles;
+    //
+    //     //Assign mesh to mesh filter
+    //     _meshFilter.mesh = mesh;
+    // }
 
 
     private RenderTexture CreateRenderTexture(int width, int height)
