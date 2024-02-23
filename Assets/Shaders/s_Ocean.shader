@@ -90,21 +90,28 @@ Shader "Unlit/Ocean"
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - pos);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
                 float3 halfVector = normalize(sunDirection + viewDirection);
-                float3 normal = normalize(tex2D(_NormalMap, i.uv));
+                float3 normal = tex2Dlod(_NormalMap, float4(i.uv, 0, 0));
 
                 float part3 = _Tweak3 * normal;
                 float3 ambient = part3 * _WaterScatterColor * _LightColor0 + _DensityOfWaterBubbles * _AirBubblesColor * _LightColor0;
+
+                // Fresnel
+                float fresnel = pow(1.0 - max(dot(viewDirection, normal), 0.15), 5.0);
                 
                 float3 reflectDir = reflect(-_WorldSpaceLightPos0.xyz, normal);
                 float spec = pow(max(dot(viewDirection, reflectDir), 0.0), _Shininess);
-                float3 specular = _LightColor0.rgb * (spec * _SpecColor);  
+                float3 specular = _LightColor0.rgb * (spec * _SpecColor) * fresnel;  
 
                 float part1 = _Tweak1 * max(0, i.posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f) * pow(0.5f - 0.5f * dot(sunDirection, normal), 3.0f);
 				float part2 = _Tweak2 * pow(DotClamped(viewDirection, normal), 2.0f);
                 
 				float3 scatter = (part1 + part2) * _WaterScatterColor * _LightColor0;
 
-                float3 output = ambient + scatter + specular;
+                float3 I = normalize(pos - _WorldSpaceCameraPos);
+                half4 skyData = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, reflect(I, normal));
+                half3 envReflection = (1-fresnel) * 0.05 * DecodeHDR (skyData, unity_SpecCube0_HDR);
+
+                float3 output = ambient + scatter + specular + envReflection;
 
                 float foam = tex2D(_FoamMap, i.uv).r;
 
@@ -113,9 +120,8 @@ Shader "Unlit/Ocean"
                     float3 foamColor = float3(foam, foam, foam);
                     output = saturate(output + foamColor);
                 }
-                    
                             
-                return float4(output, 1);
+                return float4(output.rgb, 1);
             }
             ENDCG
         }

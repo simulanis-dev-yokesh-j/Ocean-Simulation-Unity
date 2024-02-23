@@ -128,7 +128,7 @@ public class OceanGenerator : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.I))
         {
-            Utilities.OutputTexture(_initSpectrumData.InitSpectrum);
+            Utilities.OutputTexture(_spectrumWrapperData.NormalMap);
         }
         
         _time += Time.deltaTime * _speed;
@@ -141,7 +141,7 @@ public class OceanGenerator : MonoBehaviour
         
         _spectrumMapImage.texture = _timeDependantSpectrumData.FrequencyDomain;
         _hightMapImage.texture = _timeDependantSpectrumData.HeightMap;
-        _normalMapImage.texture = _spectrumWrapperData.FoamMap;
+        _normalMapImage.texture = _spectrumWrapperData.NormalMap;
     }
 
     private void InitRenderTextures()
