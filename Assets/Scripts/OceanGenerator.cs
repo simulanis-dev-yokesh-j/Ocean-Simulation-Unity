@@ -25,7 +25,7 @@ public class OceanGenerator : MonoBehaviour
         public RenderTexture WaveData;
         public Texture2D GaussianNoise;
     }
-    
+
     [System.Serializable]
     public struct TimeDependantSpectrumData
     {
@@ -46,20 +46,20 @@ public class OceanGenerator : MonoBehaviour
         public RenderTexture DisplacementMap;
         public RenderTexture FoamMap;
     }
-    
+
     [Header("Shaders")]
     [SerializeField] private ComputeShaders _computeShaders;
 
     [Header("References")]
-    [SerializeField] private GameObject _ocean;
     [SerializeField] private Material _material;
+    [FormerlySerializedAs("_gauusianNoiseImage")] [SerializeField] private RawImage _gaussianNoiseImage;
     [SerializeField] private RawImage _spectrumMapImage;
+    [SerializeField] private RawImage _frequencyDomainImage;
     [SerializeField] private RawImage _hightMapImage;
     [SerializeField] private RawImage _normalMapImage;
+    [SerializeField] private RawImage _horizontalDisplacementMapImage;
+    [SerializeField] private RawImage _foamMapImage;
 
-    [Header("Geometry Parameters")]
-    [SerializeField] private int _resolution = 256;
-    
     [Header("Spectrum Parameters")]
     [SerializeField] private int _seed = 10;
     [SerializeField] private int _size = 512;
@@ -74,18 +74,17 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField, Range(0, 2)] private float _waveChopyFactor = 0.8f;
     [SerializeField, Range(0, 2)] private float _foamIntensity = 0.5f;
     [SerializeField, Range(0, 1)] private float _foamDecay = 0.1f;
-    private float _time = 0f;
-    
+
     // Outputs
     private InitSpectrumData _initSpectrumData;
     private TimeDependantSpectrumData _timeDependantSpectrumData;
     private SpectrumWrapperData _spectrumWrapperData;
-    
+
     // Other var
+    private float _time;
     private ComputeFFT _fft;
     private CommandBuffer _commandBuffer;
-    private MeshFilter _meshFilter;
-    private MeshRenderer _meshRenderer;
+    private OceanGeometry _oceanGeometry;
     private static readonly int DisplacementMapID = Shader.PropertyToID("_DisplacementMap");
     private static readonly int NormalMapID = Shader.PropertyToID("_NormalMap");
     private static readonly int FoamMap = Shader.PropertyToID("_FoamMap");
@@ -93,21 +92,18 @@ public class OceanGenerator : MonoBehaviour
 
     private void Start()
     {
-        _meshFilter = _ocean.AddComponent<MeshFilter>();
-        _meshRenderer = _ocean.AddComponent<MeshRenderer>();
         _commandBuffer = new CommandBuffer();
+        _oceanGeometry = GetComponent<OceanGeometry>();
 
-        GeneratePlane(_size, _resolution);
-        _meshRenderer.material = _material;
-        
         InitRenderTextures();
         GenerateInitSpectrum();
-        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
 
         _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
         _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
         _material.SetTexture(FoamMap, _spectrumWrapperData.FoamMap);
         _material.SetFloat(LengthScale, _lengthScale);
+        
+        _oceanGeometry.GenerateGrid(_material);
     }
 
     private void OnValidate()
@@ -120,8 +116,7 @@ public class OceanGenerator : MonoBehaviour
         
         InitRenderTextures();
         GenerateInitSpectrum();
-        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
-        
+
         _material.SetTexture(DisplacementMapID, _spectrumWrapperData.DisplacementMap);
         _material.SetTexture(NormalMapID, _spectrumWrapperData.NormalMap);
         _material.SetTexture(FoamMap, _spectrumWrapperData.FoamMap);
@@ -130,10 +125,10 @@ public class OceanGenerator : MonoBehaviour
     
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.I))
-        {
-            Utilities.OutputTexture(_spectrumWrapperData.NormalMap);
-        }
+        // if (Input.GetKeyDown(KeyCode.I))
+        // {
+        //     Utilities.OutputTexture(_spectrumWrapperData.NormalMap);
+        // }
         
         _time += Time.deltaTime * _speed;
         GenerateFrequencyDomain();
@@ -143,13 +138,19 @@ public class OceanGenerator : MonoBehaviour
         Graphics.ExecuteCommandBuffer(_commandBuffer);
         _commandBuffer.Clear();
         
-        _spectrumMapImage.texture = _timeDependantSpectrumData.FrequencyDomain;
+        _gaussianNoiseImage.texture = _initSpectrumData.GaussianNoise;
+        _spectrumMapImage.texture = _initSpectrumData.InitSpectrum;
+        _frequencyDomainImage.texture = _timeDependantSpectrumData.FrequencyDomain;
         _hightMapImage.texture = _timeDependantSpectrumData.HeightMap;
         _normalMapImage.texture = _spectrumWrapperData.NormalMap;
+        _horizontalDisplacementMapImage.texture = _timeDependantSpectrumData.HorizontalDisplacementMap;
+        _foamMapImage.texture = _spectrumWrapperData.FoamMap;
     }
 
     private void InitRenderTextures()
     {
+        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
+        
         _initSpectrumData.InitKernel = _computeShaders.InitSpectrum.FindKernel("CalculateInitSpectrum");
         _initSpectrumData.WrapperKernel = _computeShaders.InitSpectrum.FindKernel("ConjugateInitSpectrum");
         _timeDependantSpectrumData.Kernel = _computeShaders.TimeDependantSpectrum.FindKernel("CalculateFrequencyDomain");
@@ -210,7 +211,6 @@ public class OceanGenerator : MonoBehaviour
         _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.ConjugatedSpectrum);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "WaveData", _initSpectrumData.WaveData);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "FrequencyDomain", _timeDependantSpectrumData.FrequencyDomain);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightDerivative", _timeDependantSpectrumData.HeightDerivative);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "HorizontalDisplacementMap", _timeDependantSpectrumData.HorizontalDisplacementMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXxZzMap", _timeDependantSpectrumData.JacobianXxZzMap);
@@ -246,100 +246,11 @@ public class OceanGenerator : MonoBehaviour
 
         _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);
     }
-    
-    private void GeneratePlane(int size, int resolution)
-    {
-        Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
-        int[] triangles = new int[resolution * resolution * 6];
-    
-        float increment = 1f / resolution;
-        int vertIndex = 0;
-        int triIndex = 0;
-    
-        // Create vertices and triangles
-        for (int y = 0; y <= resolution; y++)
-        {
-            for (int x = 0; x <= resolution; x++)
-            {
-                vertices[vertIndex] = new Vector3(size * (x * increment - .5f), 0, size * (y * increment - .5f));
-    
-                if (x != resolution && y != resolution)
-                {
-                    triangles[triIndex] = vertIndex;
-                    triangles[triIndex + 1] = vertIndex + resolution + 1;
-                    triangles[triIndex + 2] = vertIndex + resolution + 2;
-    
-                    triangles[triIndex + 3] = vertIndex;
-                    triangles[triIndex + 4] = vertIndex + resolution + 2;
-                    triangles[triIndex + 5] = vertIndex + 1;
-    
-                    triIndex += 6;
-                }
-                vertIndex++;
-            }
-        }
-    
-        //Create mesh
-        Mesh mesh = new Mesh();
-        mesh.name = "Ocean Mesh";
-        mesh.indexFormat = IndexFormat.UInt32;
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-    
-        //Assign mesh to mesh filter
-        _meshFilter.mesh = mesh;
-    }
-
-    // private void GeneratePlane(int size, int resolution)
-    // {
-    //     Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
-    //     int[] triangles = new int[resolution * resolution * 6];
-    //
-    //     // Create vertices
-    //     for (int i = 0, y = 0; y <= resolution; y++)
-    //     {
-    //         for (int x = 0; x <= resolution; x++, i++)
-    //         {
-    //             vertices[i] = new Vector3(x * size / resolution, 0, y * size / resolution);
-    //         }
-    //     }
-    //
-    //     // Create triangular grid
-    //     for (int ti = 0, vi = 0, y = 0; y < resolution; y++, vi++)
-    //     {
-    //         for (int x = 0; x < resolution; x++, ti += 6, vi++)
-    //         {
-    //             triangles[ti] = vi;
-    //             triangles[ti + 3] = triangles[ti + 2] = vi + 1;
-    //             triangles[ti + 4] = triangles[ti + 1] = vi + resolution + 1;
-    //             triangles[ti + 5] = vi + resolution + 2;
-    //         }
-    //     }
-    //
-    //     //Create mesh
-    //     Mesh mesh = new Mesh();
-    //     mesh.name = "Ocean Mesh";
-    //     mesh.indexFormat = IndexFormat.UInt32;
-    //     mesh.vertices = vertices;
-    //     mesh.triangles = triangles;
-    //
-    //     //Assign mesh to mesh filter
-    //     _meshFilter.mesh = mesh;
-    // }
-
-
-    private RenderTexture CreateRenderTexture(int width, int height)
-    {
-        RenderTexture renderTexture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-        renderTexture.enableRandomWrite = true;
-        renderTexture.Create();
-        return renderTexture;
-    }
 
     //Code from https://stackoverflow.com/a/218600
     Texture2D GenerateGaussianNoise(int size)
     {
-        Texture2D noise = new Texture2D(size, size, TextureFormat.RGBAFloat, false, true);
+        Texture2D noise = new Texture2D(size, size, TextureFormat.RGFloat, false, true);
         noise.filterMode = FilterMode.Point;
         
         Random.InitState(_seed);
@@ -348,7 +259,7 @@ public class OceanGenerator : MonoBehaviour
         {
             for (int j = 0; j < size; j++)
             {
-                noise.SetPixel(i, j, new Vector4(NormalRandom(), NormalRandom(), NormalRandom(), NormalRandom()));
+                noise.SetPixel(i, j, new Vector4(NormalRandom(), NormalRandom(),0, 0));
             }
         }
         
