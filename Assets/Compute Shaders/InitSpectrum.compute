@@ -207,14 +207,14 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
     
     float2 h_0 = FourierWaveAmplitude(id.xy, k, dispersion, angle);
 
-    InitSpectrum[id.xy] = float2(h_0.xy) * 100;
+    InitSpectrum[id.xy] = float2(h_0.xy);
     WaveData[id.xy] = float4(k.x, k.y, dispersion, 1);
 }
 
 [numthreads(8,8,1)]
 void ConjugateInitSpectrum (uint3 id : SV_DispatchThreadID)
 {
-    float2 h_0 = InitSpectrum[id.xy] / 100;
-    float2 h_minus_k = InitSpectrum[uint2((Size - id.x) % Size, (Size - id.y) % Size)] / 100;
+    float2 h_0 = InitSpectrum[id.xy];
+    float2 h_minus_k = InitSpectrum[uint2((Size - id.x) % Size, (Size - id.y) % Size)];
     ConjugatedSpectrum[id.xy] = float4(h_0.xy, h_minus_k.x, -h_minus_k.y);
 }
