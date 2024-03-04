@@ -14,10 +14,10 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_Fog: 1
+  m_FogColor: {r: 0.8254717, g: 1, b: 0.99835724, a: 1}
   m_FogMode: 3
-  m_FogDensity: 0.01
+  m_FogDensity: 0.00025
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
@@ -729,7 +729,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.18477994, y: 0.34397885, z: -0.06923715, w: 0.91800934}
+  m_LocalRotation: {x: 0.16192402, y: 0.56027657, z: -0.11277427, w: 0.804458}
   m_LocalPosition: {x: -182.2, y: 99.2, z: -221.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1345,7 +1345,7 @@ MonoBehaviour:
   _depth: 500
   _distanceToShore: 1000
   _waveChopyFactor: 0.9
-  _foamIntensity: 0.65
+  _foamIntensity: 0.45
   _foamDecay: 0.08
 --- !u!114 &432667429
 MonoBehaviour:
@@ -1360,8 +1360,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _parent: {fileID: 1089990283}
-  _ringSize: 512
-  _resolution: 512
+  _ringSize: 1024
+  _resolution: 1024
   _numRings: 1
 --- !u!1 &503036186
 GameObject:

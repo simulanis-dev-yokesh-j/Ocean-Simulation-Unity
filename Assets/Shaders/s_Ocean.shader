@@ -30,6 +30,8 @@ Shader "Unlit/Ocean"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            // make fog work
+            #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
 
@@ -62,6 +64,7 @@ Shader "Unlit/Ocean"
                 float2 uv : TEXCOORD0;
                 float3 posWorld : TEXCOORD1;
                 float2 uvWorld : TEXCOORD2;
+                UNITY_FOG_COORDS(3)
             };
 
             v2f vert (appdata v)
@@ -83,6 +86,7 @@ Shader "Unlit/Ocean"
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
                 o.uvWorld = uvWorld;
+                UNITY_TRANSFER_FOG(o, o.pos);
                 return o;
             }
 
@@ -129,7 +133,10 @@ Shader "Unlit/Ocean"
                     float3 foamColor = float3(foam, foam, foam);
                     output = saturate(output + foamColor);
                 }
-                            
+
+                // apply fog
+                UNITY_APPLY_FOG(i.fogCoord, output);
+                
                 return float4(output, 1);
             }
             ENDCG
