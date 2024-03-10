@@ -8,6 +8,7 @@ Shader "Unlit/Ocean"
         _WaterScatterColor("Water Scatter Color", Color) = (1, 1, 1, 1)
         [HDR] _SpecColor ("Specular Color", Color) = (1, 1, 1, 1)
         _Shininess ("Shininess", Float) = 10
+        _Reflectivity("Reflectivity", Range(0, 1)) = 0.1
         
         _DensityOfWaterBubbles("Density of Water Bubbles", Float) = 0.5
         _Tweak1("Tweak1", Float) = 0.05
@@ -41,6 +42,7 @@ Shader "Unlit/Ocean"
             uniform float4 _AirBubblesColor;
             uniform float4 _SpecColor;
             uniform float _Shininess;
+            uniform float _Reflectivity;
 
             uniform float _DensityOfWaterBubbles;
             uniform float _Tweak1;
@@ -122,7 +124,7 @@ Shader "Unlit/Ocean"
 
                 float3 I = normalize(posWorld - _WorldSpaceCameraPos);
                 half4 skyData = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, reflect(I, normal));
-                half3 envReflection = (1-fresnel) * 0.1 * DecodeHDR (skyData, unity_SpecCube0_HDR);
+                half3 envReflection = (1-fresnel) * _Reflectivity * DecodeHDR (skyData, unity_SpecCube0_HDR);
 
                 float3 output = ambient + scatter + specular + envReflection;
 

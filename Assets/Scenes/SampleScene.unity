@@ -730,7 +730,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.16192402, y: 0.56027657, z: -0.11277427, w: 0.804458}
-  m_LocalPosition: {x: -182.2, y: 99.2, z: -221.6}
+  m_LocalPosition: {x: -1004, y: 99.2, z: 263}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1337,8 +1337,8 @@ MonoBehaviour:
   _horizontalDisplacementMapImage: {fileID: 424351531}
   _foamMapImage: {fileID: 2005065228}
   _seed: 10
-  _size: 512
-  _lengthScale: 512
+  _size: 1024
+  _lengthScale: 1024
   _speed: 1
   _windSpeed: 31
   _windAngle: 45
@@ -1362,7 +1362,7 @@ MonoBehaviour:
   _parent: {fileID: 1089990283}
   _ringSize: 1024
   _resolution: 1024
-  _numRings: 1
+  _numRings: 10
 --- !u!1 &503036186
 GameObject:
   m_ObjectHideFlags: 0
