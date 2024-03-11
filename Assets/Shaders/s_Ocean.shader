@@ -15,9 +15,17 @@ Shader "Unlit/Ocean"
         _Tweak2("Tweak2", Float) = 0.5
         _Tweak3("Tweak3", Float) = 0.5
         
-        _DisplacementMap("Displacement Map", 2D) = "white" {}
-        _NormalMap("Normal Map", 2D) = "bump" {}
-        _FoamMap("Foam Map", 2D) = "white" {}
+        _DisplacementMap1("Displacement Map1", 2D) = "white" {}
+        _NormalMap1("Normal Map1", 2D) = "bump" {}
+        _FoamMap1("Foam Map1", 2D) = "white" {}
+        
+        _DisplacementMap2("Displacement Map2", 2D) = "white" {}
+        _NormalMap2("Normal Map2", 2D) = "bump" {}
+        _FoamMap2("Foam Map2", 2D) = "white" {}
+        
+        _DisplacementMap3("Displacement Map3", 2D) = "white" {}
+        _NormalMap3("Normal Map3", 2D) = "bump" {}
+        _FoamMap3("Foam Map3", 2D) = "white" {}
     }
     SubShader
     {
@@ -49,10 +57,21 @@ Shader "Unlit/Ocean"
             uniform float _Tweak2;
             uniform float _Tweak3;
             
-            uniform sampler2D_half _DisplacementMap;
-            uniform sampler2D_half _NormalMap;
-            uniform sampler2D_half _FoamMap;
-            uniform float _LengthScale;
+            uniform sampler2D_half _DisplacementMap1;
+            uniform sampler2D_half _DisplacementMap2;
+            uniform sampler2D_half _DisplacementMap3;
+            
+            uniform sampler2D_half _NormalMap1;
+            uniform sampler2D_half _NormalMap2;
+            uniform sampler2D_half _NormalMap3;
+            
+            uniform sampler2D_half _FoamMap1;
+            uniform sampler2D_half _FoamMap2;
+            uniform sampler2D_half _FoamMap3;
+            
+            uniform float _LengthScale1;
+            uniform float _LengthScale2;
+            uniform float _LengthScale3;
 
             struct appdata
             {
@@ -74,12 +93,12 @@ Shader "Unlit/Ocean"
                 v2f o;
 
                 float3 posWorld = mul(unity_ObjectToWorld, v.vertex);
-                float2 uvWorld = posWorld.xz / _LengthScale;
+
+                float3 displacement = tex2Dlod(_DisplacementMap1, float4(posWorld.xz / _LengthScale1, 0, 0));
+                displacement += tex2Dlod(_DisplacementMap2, float4(posWorld.xz / _LengthScale2, 0, 0));
+                displacement += tex2Dlod(_DisplacementMap3, float4(posWorld.xz / _LengthScale3, 0, 0));
                 
-                float3 displacement = tex2Dlod(_DisplacementMap, float4(uvWorld, 0, 0));
-                v.vertex.x += displacement.x;
-                v.vertex.y = displacement.y;
-                v.vertex.z += displacement.z;
+                v.vertex.xyz += displacement;
 
                 posWorld = mul(unity_ObjectToWorld, v.vertex);
 
@@ -87,7 +106,7 @@ Shader "Unlit/Ocean"
                 
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
-                o.uvWorld = uvWorld;
+                o.uvWorld = posWorld.xz;
                 UNITY_TRANSFER_FOG(o, o.pos);
                 return o;
             }
@@ -100,12 +119,16 @@ Shader "Unlit/Ocean"
             fixed4 frag (v2f i) : SV_Target
             {
                 float3 posWorld = i.posWorld;
-                float2 uvWorld = i.uvWorld;
+                float2 uvWorld1 = i.uvWorld / _LengthScale1;
+                float2 uvWorld2 = i.uvWorld / _LengthScale2;
+                float2 uvWorld3 = i.uvWorld / _LengthScale3;
                 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
-                float3 halfVector = normalize(sunDirection + viewDirection);
-                float3 normal = tex2Dlod(_NormalMap, float4(uvWorld, 0, 0));
+                float3 nor = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0));
+                nor += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0));
+                nor += tex2Dlod(_NormalMap3, float4(uvWorld3, 0, 0));
+                float3 normal = normalize(float3(-nor.x, 1, -nor.z));
 
                 float part3 = _Tweak3 * normal;
                 float3 ambient = part3 * _WaterScatterColor * _LightColor0 + _DensityOfWaterBubbles * _AirBubblesColor * _LightColor0;
@@ -128,7 +151,9 @@ Shader "Unlit/Ocean"
 
                 float3 output = ambient + scatter + specular + envReflection;
 
-                float foam = tex2D(_FoamMap, uvWorld).r;
+                float foam = tex2D(_FoamMap1, uvWorld1).r;
+                foam += tex2D(_FoamMap2, uvWorld2).r;
+                foam += tex2D(_FoamMap3, uvWorld3).r;
 
                 if(foam > 0)
                 {
@@ -139,7 +164,7 @@ Shader "Unlit/Ocean"
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, output);
                 
-                return float4(output, 1);
+                return float4(normal, 1);
             }
             ENDCG
         }
