@@ -99,11 +99,9 @@ Shader "Unlit/Ocean"
                 displacement += tex2Dlod(_DisplacementMap3, float4(posWorld.xz / _LengthScale3, 0, 0));
                 
                 v.vertex.xyz += displacement;
-
                 posWorld = mul(unity_ObjectToWorld, v.vertex);
 
                 o.posWorld = posWorld;
-                
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
                 o.uvWorld = posWorld.xz;
@@ -125,10 +123,11 @@ Shader "Unlit/Ocean"
                 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
-                float3 nor = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0));
-                nor += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0));
-                nor += tex2Dlod(_NormalMap3, float4(uvWorld3, 0, 0));
-                float3 normal = normalize(float3(-nor.x, 1, -nor.z));
+                float3 derivatives = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0));
+                derivatives += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0));
+                derivatives += tex2Dlod(_NormalMap3, float4(uvWorld3, 0, 0));
+                
+                float3 normal = normalize(float3(-derivatives.x, 1, -derivatives.z));
 
                 float part3 = _Tweak3 * normal;
                 float3 ambient = part3 * _WaterScatterColor * _LightColor0 + _DensityOfWaterBubbles * _AirBubblesColor * _LightColor0;
@@ -164,7 +163,7 @@ Shader "Unlit/Ocean"
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, output);
                 
-                return float4(normal, 1);
+                return float4(output, 1);
             }
             ENDCG
         }

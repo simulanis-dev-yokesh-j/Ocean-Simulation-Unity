@@ -1261,9 +1261,9 @@ MonoBehaviour:
   _cascade3: {fileID: 2005065228}
   _seed: 10
   _size: 256
-  lengthScale0: 256
-  lengthScale1: 17
-  lengthScale2: 5
+  lengthScale0: 701
+  lengthScale1: 195
+  lengthScale2: 45
   _oceanSettings:
     WindSpeed: 31
     WindAngle: 45
@@ -1287,7 +1287,7 @@ MonoBehaviour:
   _parent: {fileID: 1089990283}
   _ringSize: 512
   _resolution: 512
-  _numRings: 1
+  _numRings: 15
 --- !u!1 &503036186
 GameObject:
   m_ObjectHideFlags: 0
