@@ -1270,9 +1270,9 @@ MonoBehaviour:
     WindAngle: 45
     Depth: 1000
     DistanceToShore: 1000
-    WaveChopyFactor: 0.81
-    FoamIntensity: 0.71
-    FoamDecay: 0.023
+    WaveChopyFactor: 0.97
+    FoamIntensity: 0.58
+    FoamDecay: 0.018
 --- !u!114 &432667429
 MonoBehaviour:
   m_ObjectHideFlags: 0

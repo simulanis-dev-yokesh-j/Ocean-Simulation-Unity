@@ -147,7 +147,7 @@ Shader "Unlit/Ocean"
 
                 float3 I = normalize(posWorld - _WorldSpaceCameraPos);
                 half4 skyData = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, reflect(I, normal));
-                half3 envReflection = saturate((1-fresnel) * _Reflectivity * DecodeHDR (skyData, unity_SpecCube0_HDR));
+                half3 envReflection = _Reflectivity * DecodeHDR (skyData, unity_SpecCube0_HDR);
 
                 float3 output = ambient + scatter + specular + envReflection;
 
