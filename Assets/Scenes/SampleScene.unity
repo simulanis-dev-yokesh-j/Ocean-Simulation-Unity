@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.1834887, g: 0.22750929, b: 0.29679948, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1261,17 +1261,17 @@ MonoBehaviour:
   _cascade3: {fileID: 2005065228}
   _seed: 10
   _size: 256
-  lengthScale0: 701
-  lengthScale1: 195
-  lengthScale2: 45
+  lengthScale0: 407
+  lengthScale1: 71
+  lengthScale2: 21
   _oceanSettings:
     WindSpeed: 31
     WindAngle: 45
     Depth: 1000
     DistanceToShore: 1000
     WaveChopyFactor: 0.95
-    FoamIntensity: 0.5
-    FoamDecay: 0.1
+    FoamIntensity: 0.57
+    FoamDecay: 0.044
 --- !u!114 &432667429
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -79,8 +79,8 @@ public class OceanGenerator : MonoBehaviour
         _oceanCascade3 = new OceanCascade(compShaders, _commandBuffer);
         _oceanCascade2 = new OceanCascade(compShaders, _commandBuffer);
         
-        float boundary1 = 2 * Mathf.PI / lengthScale1 * 8;
-        float boundary2 = 2 * Mathf.PI / lengthScale2 * 8;
+        float boundary1 = 2 * Mathf.PI / lengthScale1 * 20;
+        float boundary2 = 2 * Mathf.PI / lengthScale2 * 20;
 
         _oceanCascade1.Init(_size, lengthScale0, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade2.Init(_size, lengthScale1, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
@@ -100,8 +100,8 @@ public class OceanGenerator : MonoBehaviour
         
         _fft = new ComputeFFT(_size, _commandBuffer, compShaders.FFT);
         
-        float boundary1 = 2 * Mathf.PI / lengthScale1 * 8;
-        float boundary2 = 2 * Mathf.PI / lengthScale2 * 8;
+        float boundary1 = 2 * Mathf.PI / lengthScale1 * 20;
+        float boundary2 = 2 * Mathf.PI / lengthScale2 * 20;
 
         _oceanCascade1.Init(_size, lengthScale0, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade2.Init(_size, lengthScale1, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
