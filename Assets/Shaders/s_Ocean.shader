@@ -139,14 +139,15 @@ Shader "Unlit/Ocean"
                 float spec = pow(max(dot(viewDirection, reflectDir), 0.0), _Shininess);
                 float3 specular = _LightColor0.rgb * (spec * _SpecColor) * fresnel;  
 
-                float part1 = _Tweak1 * max(0, posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f) * pow(0.5f - 0.5f * dot(sunDirection, normal), 3.0f);
+                //float part1 = _Tweak1 * max(0, posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f) * pow(0.5f - 0.5f * dot(sunDirection, normal), 3.0f);
+                float part1 = _Tweak1 * max(0, posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f);
 				float part2 = _Tweak2 * pow(DotClamped(viewDirection, normal), 2.0f);
                 
 				float3 scatter = (part1 + part2) * _WaterScatterColor * _LightColor0;
 
                 float3 I = normalize(posWorld - _WorldSpaceCameraPos);
                 half4 skyData = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, reflect(I, normal));
-                half3 envReflection = (1-fresnel) * _Reflectivity * DecodeHDR (skyData, unity_SpecCube0_HDR);
+                half3 envReflection = saturate((1-fresnel) * _Reflectivity * DecodeHDR (skyData, unity_SpecCube0_HDR));
 
                 float3 output = ambient + scatter + specular + envReflection;
 

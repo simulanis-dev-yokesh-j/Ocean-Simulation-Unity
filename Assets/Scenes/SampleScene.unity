@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.1834887, g: 0.22750929, b: 0.29679948, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1259,19 +1259,20 @@ MonoBehaviour:
   _cascade1: {fileID: 783113521}
   _cascade2: {fileID: 424351531}
   _cascade3: {fileID: 2005065228}
+  SomeMagicNumber: 8
   _seed: 10
   _size: 256
-  lengthScale0: 407
-  lengthScale1: 71
-  lengthScale2: 21
+  lengthScale0: 637
+  lengthScale1: 256
+  lengthScale2: 109
   _oceanSettings:
     WindSpeed: 31
     WindAngle: 45
     Depth: 1000
     DistanceToShore: 1000
-    WaveChopyFactor: 0.95
-    FoamIntensity: 0.57
-    FoamDecay: 0.044
+    WaveChopyFactor: 0.81
+    FoamIntensity: 0.71
+    FoamDecay: 0.023
 --- !u!114 &432667429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1286,8 +1287,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _parent: {fileID: 1089990283}
   _ringSize: 512
-  _resolution: 512
-  _numRings: 15
+  _resolution: 256
+  _numRings: 20
 --- !u!1 &503036186
 GameObject:
   m_ObjectHideFlags: 0

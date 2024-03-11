@@ -216,7 +216,7 @@ void CalculateInitSpectrum (uint3 id : SV_DispatchThreadID)
     else
     {
         InitSpectrum[id.xy] = float2(0, 0);
-        WaveData[id.xy] = float4(k.x, k.y, 0, 1);
+        WaveData[id.xy] = float4(k.x, k.y, 1, 1);
     }
 }
 

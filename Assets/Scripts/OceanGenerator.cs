@@ -38,7 +38,8 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private RawImage _cascade2;
     [SerializeField] private RawImage _cascade3;
 
-    [Header("Ocean Parameters")]
+    [Header("Ocean Parameters")] 
+    public int SomeMagicNumber = 8;
     [SerializeField] private int _seed = 10;
     [SerializeField] private int _size = 512;
     [SerializeField] private int lengthScale0 = 256;
@@ -79,8 +80,8 @@ public class OceanGenerator : MonoBehaviour
         _oceanCascade3 = new OceanCascade(compShaders, _commandBuffer);
         _oceanCascade2 = new OceanCascade(compShaders, _commandBuffer);
         
-        float boundary1 = 2 * Mathf.PI / lengthScale1 * 20;
-        float boundary2 = 2 * Mathf.PI / lengthScale2 * 20;
+        float boundary1 = 2 * Mathf.PI / lengthScale1 * SomeMagicNumber;
+        float boundary2 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
 
         _oceanCascade1.Init(_size, lengthScale0, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade2.Init(_size, lengthScale1, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
@@ -100,8 +101,8 @@ public class OceanGenerator : MonoBehaviour
         
         _fft = new ComputeFFT(_size, _commandBuffer, compShaders.FFT);
         
-        float boundary1 = 2 * Mathf.PI / lengthScale1 * 20;
-        float boundary2 = 2 * Mathf.PI / lengthScale2 * 20;
+        float boundary1 = 2 * Mathf.PI / lengthScale1 * SomeMagicNumber;
+        float boundary2 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
 
         _oceanCascade1.Init(_size, lengthScale0, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade2.Init(_size, lengthScale1, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);

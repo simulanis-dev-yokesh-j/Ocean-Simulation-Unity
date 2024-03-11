@@ -154,7 +154,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DensityOfWaterBubbles: 0.79
+    - _DensityOfWaterBubbles: 0.51
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -168,7 +168,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Reflectivity: 0.022
+    - _Reflectivity: 0.169
     - _RefractiveIndex: 0.76
     - _Scale: 1
     - _Shininess: 31.3
@@ -178,7 +178,7 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _Tweak1: 0.45
+    - _Tweak1: 0.08
     - _Tweak2: 0.06
     - _Tweak3: 0.09
     - _Tweak4: 0.72
@@ -194,7 +194,7 @@ Material:
     - _DiffuseColor: {r: 0.253115, g: 0.4801197, b: 0.6792453, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LightDir: {r: 0, g: -1, b: -1, a: 0}
-    - _SpecColor: {r: 6.883181, g: 4.9816394, b: 3.6158419, a: 1}
+    - _SpecColor: {r: 1.9766747, g: 1.4306002, b: 1.0383779, a: 1}
     - _SpecularColor: {r: 0.8773585, g: 0.07863116, b: 0.07863116, a: 1}
     - _WaterScaterColor: {r: 1, g: 1, b: 1, a: 1}
     - _WaterScatterColor: {r: 0.2240566, g: 0.5, b: 0.45033017, a: 1}
