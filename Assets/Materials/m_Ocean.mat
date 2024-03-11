@@ -179,7 +179,7 @@ Material:
     - _SrcBlendAlpha: 1
     - _Surface: 0
     - _Tweak1: 0.08
-    - _Tweak2: -0.1
+    - _Tweak2: 0.22
     - _Tweak3: 0.08
     - _Tweak4: 0.72
     - _Twewk2: 0.05

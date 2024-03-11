@@ -1262,17 +1262,17 @@ MonoBehaviour:
   SomeMagicNumber: 8
   _seed: 10
   _size: 256
-  lengthScale0: 637
-  lengthScale1: 256
-  lengthScale2: 109
+  lengthScale0: 903
+  lengthScale1: 161
+  lengthScale2: 86
   _oceanSettings:
-    WindSpeed: 31
-    WindAngle: 45
+    WindSpeed: 27
+    WindAngle: 29.411175
     Depth: 1000
     DistanceToShore: 1000
     WaveChopyFactor: 0.97
-    FoamIntensity: 0.58
-    FoamDecay: 0.018
+    FoamIntensity: 0.684
+    FoamDecay: 0.052
 --- !u!114 &432667429
 MonoBehaviour:
   m_ObjectHideFlags: 0
