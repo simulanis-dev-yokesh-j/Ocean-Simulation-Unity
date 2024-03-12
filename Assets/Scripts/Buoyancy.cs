@@ -1,25 +1,68 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
+
+public class BuoyanceVoxel
+{
+    private Transform _parent;
+    private float _size;
+    private Vector3 _offset;
+    private float _waterHeight;
+    
+    public BuoyanceVoxel(Transform parent, float size, Vector3 offset)
+    {
+        _parent = parent;
+        _size = size;
+        _offset = offset;
+    }
+
+    public void SetWaterHeight(float height)
+    {
+        _waterHeight = height;
+    }
+
+    public Vector3 GetPosition()
+    {
+        return _parent.TransformPoint(_offset);
+    }
+
+    private float GetHeightDifference()
+    {
+        var worldPoint = GetPosition();
+        var minBound = worldPoint.y - _size / 2;
+        return Mathf.Max(_waterHeight - minBound, 0);
+    }
+
+    public bool IsUnderWater()
+    {
+        return GetHeightDifference() > 0;
+    }
+
+    public float GetDisplacedVolume()
+    {
+        var newHeight = GetHeightDifference();
+        return newHeight * _size * _size;
+    }
+}
 
 public class Buoyancy : MonoBehaviour
 {
     [SerializeField] private OceanGenerator _oceanGenerator;
-    [SerializeField] private float _forceModifier = 1;
-    
+    [SerializeField] private float _voxelSize = 1;
+
     private const float _gravity = 9.81f;
-    
-    private float[] _waterHeights;
     private float _lengthScale;
-    private Vector2Int _textureSize;
-    private Vector3[] _buoyancyPoints;
-    
+    private List<BuoyanceVoxel> _voxels;
+    private bool _requested;
+
     private BoxCollider _collider;
     private Rigidbody _rigidbody;
     private RenderTexture _heightMap;
     private Texture2D _heightMapTexture;
+    
 
     private void Awake()
     {
@@ -30,71 +73,69 @@ public class Buoyancy : MonoBehaviour
     private void Start()
     {
         _heightMap = _oceanGenerator.GetOceanCascade1().GetTimeDependantSpectrumData().HeightMap;
-        _textureSize = new Vector2Int(_heightMap.width, _heightMap.height);
         _lengthScale = _oceanGenerator.GetLengthScale1();
-        _heightMapTexture = new Texture2D(_textureSize.x, _textureSize.y, TextureFormat.RGBAHalf, false);
+        _heightMapTexture = new Texture2D(_heightMap.width, _heightMap.height, TextureFormat.RGBAHalf, false);
         _heightMapTexture.wrapMode = TextureWrapMode.Repeat;
-
-        GenerateBuoyancyPoints(2, 3);
-        RequestWaterHeight();
+        
+        PopulateVoxels();
     }
 
-    private void GenerateBuoyancyPoints(int xCount, int zCount)
+    private void PopulateVoxels()
     {
-        _buoyancyPoints = new Vector3[xCount * zCount];
-        _waterHeights = new float[xCount * zCount];
-    
         var bounds = _collider.bounds;
         var size = bounds.size;
         var min = bounds.min;
-    
-        float dx = size.x / (xCount - 1);
-        float dz = size.z / (zCount - 1);
-    
+
+        int xCount = Mathf.FloorToInt(size.x / _voxelSize);
+        int yCount = Mathf.FloorToInt(size.y / _voxelSize);
+        int zCount = Mathf.FloorToInt(size.z / _voxelSize);
+
+        _voxels = new List<BuoyanceVoxel>();
+
         for (int i = 0; i < xCount; i++)
         {
-            for (int j = 0; j < zCount; j++)
+            for (int j = 0; j < yCount; j++)
             {
-                float x = min.x + i * dx;
-                float z = min.z + j * dz;
-                _buoyancyPoints[i * zCount + j] = transform.InverseTransformPoint(new Vector3(x, min.y, z));
-                _waterHeights[i * zCount + j] = 0;
+                for (int k = 0; k < zCount; k++)
+                {
+                    float x = min.x + i * _voxelSize + _voxelSize / 2;
+                    float y = min.y + j * _voxelSize + _voxelSize / 2;
+                    float z = min.z + k * _voxelSize + _voxelSize / 2;
+                    Vector3 offset = transform.InverseTransformPoint(new Vector3(x, y, z));
+                    _voxels.Add(new BuoyanceVoxel(transform, _voxelSize, offset));
+                }
             }
         }
     }
 
-    private void FixedUpdate()
+    private void ApplyForces()
     {
-        for(int i = 0; i < _buoyancyPoints.Length; i++)
+        foreach (var voxel in _voxels)
         {
-            var waterHeight = _waterHeights[i];
-            var point = transform.TransformPoint(_buoyancyPoints[i]);
-
-            // Only apply buoyancy if the point is below the water
-            if (point.y > waterHeight) 
+            if(!voxel.IsUnderWater())
                 continue;
-
-            var displacedVolume = DisplacedVolume(point.y, waterHeight);
-            var buoyancyForce = _gravity * displacedVolume * Vector3.up * _forceModifier;
-        
-            // add force at buoyancy point
-            _rigidbody.AddForceAtPosition(buoyancyForce, point);
+            
+            var displacedVolume = voxel.GetDisplacedVolume();
+            var buoyancyForce = displacedVolume * _gravity * Vector3.up  / _voxels.Count;
+            _rigidbody.AddForceAtPosition(buoyancyForce, voxel.GetPosition());
         }
     }
 
-    private float DisplacedVolume(float pointHeight, float waterHeight)
-    {
-        var submergedHeight = Mathf.Max(0, waterHeight - pointHeight);
-        var volume = submergedHeight * _lengthScale * _lengthScale; // Use the actual submerged height
-        return volume;
-    }
-
-    
     private void RequestWaterHeight()
     {
-        AsyncGPUReadback.Request(_heightMap, 0, 0, _textureSize.x, 0, _textureSize.y, 0, 1, TextureFormat.RGBAHalf, OnCompleteReadback);
+        if(_requested)
+            return;
+        
+        _requested = true;
+        AsyncGPUReadback.Request(_heightMap, 0, 0, _heightMap.width, 0, _heightMap.height, 0, 1, TextureFormat.RGBAHalf, OnCompleteReadback);
     }
 
+    private void FixedUpdate()
+    {
+        RequestWaterHeight();
+        ApplyForces();
+    }
+    
     private void OnCompleteReadback(AsyncGPUReadbackRequest request)
     {
         if (request.hasError)
@@ -107,28 +148,31 @@ public class Buoyancy : MonoBehaviour
         _heightMapTexture.LoadRawTextureData(data);
         _heightMapTexture.Apply();
 
-        for (int i = 0; i < _buoyancyPoints.Length; i++)
+        foreach (var voxel in _voxels)
         {
-            var point = _buoyancyPoints[i];
-            var worldPoint = transform.TransformPoint(point);
-            var uv = worldPoint / _lengthScale;
-            var height = _heightMapTexture.GetPixelBilinear(uv.x, uv.y).r;
-            _waterHeights[i] = height;
+            var worldPoint = voxel.GetPosition();
+            int x = Mathf.FloorToInt(worldPoint.x / _lengthScale);
+            int y = Mathf.FloorToInt(worldPoint.z / _lengthScale);
+            var pixel = _heightMapTexture.GetPixel(x, y);
+            voxel.SetWaterHeight(pixel.r);
         }
-
-        RequestWaterHeight();
+        
+        _requested = false;
     }
 
     private void OnDrawGizmos()
     {
-        //Draw the buoyancy points
-        if (_buoyancyPoints == null) return;
-        
-        Gizmos.color = Color.blue;
-        foreach (var point in _buoyancyPoints)
+        if (_voxels == null)
+            return;
+
+        foreach (var voxel in _voxels)
         {
-            var worldPoint = transform.TransformPoint(point);
-            Gizmos.DrawSphere(worldPoint, 1f);
+            if (voxel.IsUnderWater())
+                Gizmos.color = Color.blue;
+            else
+                Gizmos.color = Color.red;
+            
+            Gizmos.DrawWireCube(voxel.GetPosition(), Vector3.one * _voxelSize);
         }
     }
 }
