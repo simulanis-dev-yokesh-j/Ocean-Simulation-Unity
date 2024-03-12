@@ -20,7 +20,6 @@ public class Buoyancy : MonoBehaviour
     private Rigidbody _rigidbody;
     private RenderTexture _heightMap;
     private Texture2D _heightMapTexture;
-    private AsyncGPUReadbackRequest _request;
 
     private void Awake()
     {
@@ -70,11 +69,11 @@ public class Buoyancy : MonoBehaviour
         {
             var waterHeight = _waterHeights[i];
             var point = transform.TransformPoint(_buoyancyPoints[i]);
-            
+
             // Only apply buoyancy if the point is below the water
             if (point.y > waterHeight) 
                 continue;
-            
+
             var displacedVolume = DisplacedVolume(point.y, waterHeight);
             var buoyancyForce = _gravity * displacedVolume * Vector3.up * _forceModifier;
         
@@ -93,7 +92,7 @@ public class Buoyancy : MonoBehaviour
     
     private void RequestWaterHeight()
     {
-        _request = AsyncGPUReadback.Request(_heightMap, 0, 0, _textureSize.x, 0, _textureSize.y, 0, 1, TextureFormat.RGBAHalf, OnCompleteReadback);
+        AsyncGPUReadback.Request(_heightMap, 0, 0, _textureSize.x, 0, _textureSize.y, 0, 1, TextureFormat.RGBAHalf, OnCompleteReadback);
     }
 
     private void OnCompleteReadback(AsyncGPUReadbackRequest request)
@@ -113,23 +112,23 @@ public class Buoyancy : MonoBehaviour
             var point = _buoyancyPoints[i];
             var worldPoint = transform.TransformPoint(point);
             var uv = worldPoint / _lengthScale;
-            var height = _heightMapTexture.GetPixelBilinear(uv.x, uv.y).g;
+            var height = _heightMapTexture.GetPixelBilinear(uv.x, uv.y).r;
             _waterHeights[i] = height;
         }
 
         RequestWaterHeight();
     }
 
-    // private void OnDrawGizmos()
-    // {
-    //     //Draw the buoyancy points
-    //     if (_buoyancyPoints == null) return;
-    //     
-    //     Gizmos.color = Color.blue;
-    //     foreach (var point in _buoyancyPoints)
-    //     {
-    //         var worldPoint = transform.TransformPoint(point);
-    //         Gizmos.DrawSphere(worldPoint, 0.1f);
-    //     }
-    // }
+    private void OnDrawGizmos()
+    {
+        //Draw the buoyancy points
+        if (_buoyancyPoints == null) return;
+        
+        Gizmos.color = Color.blue;
+        foreach (var point in _buoyancyPoints)
+        {
+            var worldPoint = transform.TransformPoint(point);
+            Gizmos.DrawSphere(worldPoint, 1f);
+        }
+    }
 }
