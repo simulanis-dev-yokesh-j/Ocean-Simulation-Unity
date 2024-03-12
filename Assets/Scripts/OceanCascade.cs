@@ -85,7 +85,7 @@ public class OceanCascade
         _initSpectrumData.GaussianNoise = gaussianNoise;
 
         _timeDependantSpectrumData.FrequencyDomain = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
-        _timeDependantSpectrumData.HeightMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _timeDependantSpectrumData.HeightMap = Utilities.CreateRenderTexture(_size);
         _timeDependantSpectrumData.HeightDerivative = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _timeDependantSpectrumData.HorizontalDisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _timeDependantSpectrumData.JacobianXxZzMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);

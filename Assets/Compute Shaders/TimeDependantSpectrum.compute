@@ -11,7 +11,7 @@ RWTexture2D<float4> InitSpectrum;
 RWTexture2D<float4> WaveData;
 
 // ====== Outputs ======
-RWTexture2D<float4> FrequencyDomain;
+RWTexture2D<float2> FrequencyDomain;
 RWTexture2D<float4> HeightDerivative;
 RWTexture2D<float4> HorizontalDisplacementMap;
 RWTexture2D<float4> JacobianXxZzMap;
@@ -63,7 +63,7 @@ void CalculateFrequencyDomain (uint3 id : SV_DispatchThreadID)
     float2 j_zz = oneOverKLength * k.y * k.y * -h;
     float2 j_xz = oneOverKLength * k.x * k.y * -h;
     
-    FrequencyDomain[id.xy] = float4(h.xy, h.xy);
+    FrequencyDomain[id.xy] = float2(h.xy);
     HeightDerivative[id.xy] = float4(tangent.x, tangent.y, bitangent.x, bitangent.y);
     HorizontalDisplacementMap[id.xy] = float4(displacementX.xy, displacementZ.xy);
     JacobianXxZzMap[id.xy] = float4(j_xx.xy, j_zz.xy);

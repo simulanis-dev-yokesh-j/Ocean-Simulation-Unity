@@ -32,8 +32,7 @@ public class BuoyanceVoxel
     private float GetHeightDifference()
     {
         var worldPoint = GetPosition();
-        var minBound = worldPoint.y - _size / 2;
-        return Mathf.Max(_waterHeight - minBound, 0);
+        return Mathf.Max(_waterHeight - (worldPoint.y - _size/2), 0);
     }
 
     public bool IsUnderWater()
@@ -134,6 +133,9 @@ public class Buoyancy : MonoBehaviour
     {
         RequestWaterHeight();
         ApplyForces();
+        
+        //Apply forward force
+        _rigidbody.AddForce(transform.forward * 8f);
     }
     
     private void OnCompleteReadback(AsyncGPUReadbackRequest request)
@@ -151,8 +153,9 @@ public class Buoyancy : MonoBehaviour
         foreach (var voxel in _voxels)
         {
             var worldPoint = voxel.GetPosition();
-            int x = Mathf.FloorToInt(worldPoint.x / _lengthScale);
-            int y = Mathf.FloorToInt(worldPoint.z / _lengthScale);
+            
+            int x = Mathf.FloorToInt(worldPoint.x / _lengthScale * 256);
+            int y = Mathf.FloorToInt(worldPoint.z / _lengthScale * 256);
             var pixel = _heightMapTexture.GetPixel(x, y);
             voxel.SetWaterHeight(pixel.r);
         }
