@@ -194,7 +194,7 @@ Material:
     - _DiffuseColor: {r: 0.253115, g: 0.4801197, b: 0.6792453, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LightDir: {r: 0, g: -1, b: -1, a: 0}
-    - _SpecColor: {r: 1.9766747, g: 1.4306002, b: 1.0383779, a: 1}
+    - _SpecColor: {r: 2.9960783, g: 2.168384, b: 1.5738864, a: 1}
     - _SpecularColor: {r: 0.8773585, g: 0.07863116, b: 0.07863116, a: 1}
     - _WaterScaterColor: {r: 1, g: 1, b: 1, a: 1}
     - _WaterScatterColor: {r: 0.2240566, g: 0.5, b: 0.45033017, a: 1}

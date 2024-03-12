@@ -42,9 +42,9 @@ public class OceanGenerator : MonoBehaviour
     public int SomeMagicNumber = 8;
     [SerializeField] private int _seed = 10;
     [SerializeField] private int _size = 512;
-    [SerializeField] private int lengthScale0 = 256;
-    [SerializeField] private int lengthScale1 = 128;
-    [SerializeField] private int lengthScale2 = 64;
+    [SerializeField] private int lengthScale1 = 256;
+    [SerializeField] private int lengthScale2 = 128;
+    [SerializeField] private int lengthScale3 = 64;
     [SerializeField] private OceanCascade _oceanCascade1;
     [SerializeField] private OceanCascade _oceanCascade2;
     [SerializeField] private OceanCascade _oceanCascade3;
@@ -69,7 +69,7 @@ public class OceanGenerator : MonoBehaviour
     private static readonly int LengthScale2 = Shader.PropertyToID("_LengthScale2");
     private static readonly int LengthScale3 = Shader.PropertyToID("_LengthScale3");
 
-    private void Start()
+    private void Awake()
     {
         _commandBuffer = new CommandBuffer();
         _oceanGeometry = GetComponent<OceanGeometry>();
@@ -80,12 +80,12 @@ public class OceanGenerator : MonoBehaviour
         _oceanCascade3 = new OceanCascade(compShaders, _commandBuffer);
         _oceanCascade2 = new OceanCascade(compShaders, _commandBuffer);
         
-        float boundary1 = 2 * Mathf.PI / lengthScale1 * SomeMagicNumber;
-        float boundary2 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
+        float boundary1 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
+        float boundary2 = 2 * Mathf.PI / lengthScale3 * SomeMagicNumber;
 
-        _oceanCascade1.Init(_size, lengthScale0, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
-        _oceanCascade2.Init(_size, lengthScale1, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
-        _oceanCascade3.Init(_size, lengthScale2, boundary2, 999999, _oceanSettings, _fft, _gaussianNoise);
+        _oceanCascade1.Init(_size, lengthScale1, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
+        _oceanCascade2.Init(_size, lengthScale2, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
+        _oceanCascade3.Init(_size, lengthScale3, boundary2, 999999, _oceanSettings, _fft, _gaussianNoise);
 
         AssignMaterialUniforms();
         _oceanGeometry.GenerateGrid(_material);
@@ -101,12 +101,12 @@ public class OceanGenerator : MonoBehaviour
         
         _fft = new ComputeFFT(_size, _commandBuffer, compShaders.FFT);
         
-        float boundary1 = 2 * Mathf.PI / lengthScale1 * SomeMagicNumber;
-        float boundary2 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
+        float boundary1 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
+        float boundary2 = 2 * Mathf.PI / lengthScale3 * SomeMagicNumber;
 
-        _oceanCascade1.Init(_size, lengthScale0, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
-        _oceanCascade2.Init(_size, lengthScale1, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
-        _oceanCascade3.Init(_size, lengthScale2, boundary2, 999999, _oceanSettings, _fft, _gaussianNoise);
+        _oceanCascade1.Init(_size, lengthScale1, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
+        _oceanCascade2.Init(_size, lengthScale2, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
+        _oceanCascade3.Init(_size, lengthScale3, boundary2, 999999, _oceanSettings, _fft, _gaussianNoise);
 
         AssignMaterialUniforms();
     }
@@ -142,13 +142,13 @@ public class OceanGenerator : MonoBehaviour
         _material.SetTexture(FoamMap2, _oceanCascade2.GetSpectrumWrapperData().FoamMap);
         _material.SetTexture(FoamMap3, _oceanCascade3.GetSpectrumWrapperData().FoamMap);
         
-        _material.SetFloat(LengthScale1, lengthScale0);
-        _material.SetFloat(LengthScale2, lengthScale1);
-        _material.SetFloat(LengthScale3, lengthScale2);
+        _material.SetFloat(LengthScale1, lengthScale1);
+        _material.SetFloat(LengthScale2, lengthScale2);
+        _material.SetFloat(LengthScale3, lengthScale3);
     }
 
     //Code from https://stackoverflow.com/a/218600
-    Texture2D GenerateGaussianNoise(int size)
+    private Texture2D GenerateGaussianNoise(int size)
     {
         Texture2D noise = new Texture2D(size, size, TextureFormat.RGFloat, false, true);
         noise.filterMode = FilterMode.Point;
@@ -171,9 +171,19 @@ public class OceanGenerator : MonoBehaviour
     /// Box-Muller transform to generate a random number from a normal distribution
     /// </summary>
     /// <returns></returns>
-    float NormalRandom()
+    private float NormalRandom()
     {
         return Mathf.Cos(2 * Mathf.PI * Random.value) * Mathf.Sqrt(-2 * Mathf.Log(Random.value));
+    }
+    
+    public OceanCascade GetOceanCascade1()
+    {
+        return _oceanCascade1;
+    }
+    
+    public float GetLengthScale1()
+    {
+        return lengthScale1;
     }
 
     private void OnDestroy()
