@@ -33,8 +33,6 @@ public class OceanCascade
     public struct SpectrumWrapperData
     {
         public int Kernel;
-        public RenderTexture NormalMap;
-        public RenderTexture DisplacementMap;
         public RenderTexture FoamMap;
     }
 
@@ -42,7 +40,7 @@ public class OceanCascade
     private InitSpectrumData _initSpectrumData;
     private TimeDependantSpectrumData _timeDependantSpectrumData;
     private SpectrumWrapperData _spectrumWrapperData;
-    
+
     // other
     private int _size;
     private int _lengthScale;
@@ -78,7 +76,7 @@ public class OceanCascade
         _initSpectrumData.WrapperKernel = _computeShaders.InitSpectrum.FindKernel("ConjugateInitSpectrum");
         _timeDependantSpectrumData.Kernel = _computeShaders.TimeDependantSpectrum.FindKernel("CalculateFrequencyDomain");
         _spectrumWrapperData.Kernel = _computeShaders.SpectrumWrapper.FindKernel("ComputeWrapper");
-        
+
         _initSpectrumData.InitSpectrum = Utilities.CreateRenderTexture(_size);
         _initSpectrumData.ConjugatedSpectrum = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _initSpectrumData.WaveData = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
@@ -91,8 +89,6 @@ public class OceanCascade
         _timeDependantSpectrumData.JacobianXxZzMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _timeDependantSpectrumData.JacobianXzMap = Utilities.CreateRenderTexture(_size);
         
-        _spectrumWrapperData.DisplacementMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
-        _spectrumWrapperData.NormalMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
         _spectrumWrapperData.FoamMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
     }
     
@@ -139,6 +135,7 @@ public class OceanCascade
     
         // Set variables
         _commandBuffer.SetComputeFloatParam(shader, "Time", time);
+        _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _oceanSettings.WaveChopyFactor);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "InitSpectrum", _initSpectrumData.ConjugatedSpectrum);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "WaveData", _initSpectrumData.WaveData);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "FrequencyDomain", _timeDependantSpectrumData.FrequencyDomain);
@@ -153,12 +150,14 @@ public class OceanCascade
     
     private void GenerateHeightMap()
     {
+        // Do IFFT
         _fft.DoIFFT(_timeDependantSpectrumData.FrequencyDomain, _timeDependantSpectrumData.HeightMap);
         _fft.DoIFFT(_timeDependantSpectrumData.HeightDerivative);
         _fft.DoIFFT(_timeDependantSpectrumData.HorizontalDisplacementMap);
         _fft.DoIFFT(_timeDependantSpectrumData.JacobianXxZzMap);
         _fft.DoIFFT(_timeDependantSpectrumData.JacobianXzMap);
 
+        // Compute foam
         int kernel = _spectrumWrapperData.Kernel;
         ComputeShader shader = _computeShaders.SpectrumWrapper;
         
@@ -166,13 +165,8 @@ public class OceanCascade
         _commandBuffer.SetComputeFloatParam(shader, "DisplacementFactor", _oceanSettings.WaveChopyFactor);
         _commandBuffer.SetComputeFloatParam(shader, "FoamIntensity", _oceanSettings.FoamIntensity);
         _commandBuffer.SetComputeFloatParam(shader, "FoamDecay", _oceanSettings.FoamDecay);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightDerivative", _timeDependantSpectrumData.HeightDerivative);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "HeightMap", _timeDependantSpectrumData.HeightMap);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "HorizontalDisplacementMap", _timeDependantSpectrumData.HorizontalDisplacementMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXxZzMap", _timeDependantSpectrumData.JacobianXxZzMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "JacobianXzMap", _timeDependantSpectrumData.JacobianXzMap);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "NormalMap", _spectrumWrapperData.NormalMap);
-        _commandBuffer.SetComputeTextureParam(shader, kernel, "DisplacementMap", _spectrumWrapperData.DisplacementMap);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "FoamMap", _spectrumWrapperData.FoamMap);
 
         _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);

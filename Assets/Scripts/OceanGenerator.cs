@@ -10,6 +10,7 @@ public struct CompShaders
     public ComputeShader InitSpectrum;   
     public ComputeShader TimeDependantSpectrum;
     public ComputeShader SpectrumWrapper;
+    public ComputeShader CascadeWrapper;
     public ComputeShader FFT;
 }
 
@@ -27,8 +28,14 @@ public class OceanSettings
 
 public class OceanGenerator : MonoBehaviour
 {
+    public struct CascadeWrapperData
+    {
+        public int Kernel;
+        public RenderTexture CascadeHeightsMap;
+    }
+    
     [Header("Shaders")]
-    [SerializeField] private CompShaders compShaders;
+    [SerializeField] private CompShaders _computeShaders;
 
     [Header("References")]
     [SerializeField] private Material _material;
@@ -56,29 +63,31 @@ public class OceanGenerator : MonoBehaviour
     private CommandBuffer _commandBuffer;
     private OceanGeometry _oceanGeometry;
     private Texture2D _gaussianNoise;
-    private static readonly int DisplacementMap1ID = Shader.PropertyToID("_DisplacementMap1");
-    private static readonly int DisplacementMap2ID = Shader.PropertyToID("_DisplacementMap2");
-    private static readonly int DisplacementMap3ID = Shader.PropertyToID("_DisplacementMap3");
-    private static readonly int NormalMap1ID = Shader.PropertyToID("_NormalMap1");
-    private static readonly int NormalMap2ID = Shader.PropertyToID("_NormalMap2");
-    private static readonly int NormalMap3ID = Shader.PropertyToID("_NormalMap3");
-    private static readonly int FoamMap1 = Shader.PropertyToID("_FoamMap1");
-    private static readonly int FoamMap2 = Shader.PropertyToID("_FoamMap2");
-    private static readonly int FoamMap3 = Shader.PropertyToID("_FoamMap3");
-    private static readonly int LengthScale1 = Shader.PropertyToID("_LengthScale1");
-    private static readonly int LengthScale2 = Shader.PropertyToID("_LengthScale2");
-    private static readonly int LengthScale3 = Shader.PropertyToID("_LengthScale3");
+    private CascadeWrapperData _cascadeWrapperData;
+    private static readonly int _CascadeHeightsMapId = Shader.PropertyToID("_CascadeHeightsMap");
+    private static readonly int _HoriDisplacementMap1Id = Shader.PropertyToID("_HoriDisplacementMap1");
+    private static readonly int _HoriDisplacementMap2Id = Shader.PropertyToID("_HoriDisplacementMap2");
+    private static readonly int _HoriDisplacementMap3Id = Shader.PropertyToID("_HoriDisplacementMap3");
+    private static readonly int _NormalMap1Id = Shader.PropertyToID("_NormalMap1");
+    private static readonly int _NormalMap2Id = Shader.PropertyToID("_NormalMap2");
+    private static readonly int _NormalMap3Id = Shader.PropertyToID("_NormalMap3");
+    private static readonly int _FoamMap1Id = Shader.PropertyToID("_FoamMap1");
+    private static readonly int _FoamMap2Id = Shader.PropertyToID("_FoamMap2");
+    private static readonly int _FoamMap3Id = Shader.PropertyToID("_FoamMap3");
+    private static readonly int _LengthScale1Id = Shader.PropertyToID("_LengthScale1");
+    private static readonly int _LengthScale2Id = Shader.PropertyToID("_LengthScale2");
+    private static readonly int _LengthScale3Id = Shader.PropertyToID("_LengthScale3");
 
     private void Awake()
     {
         _commandBuffer = new CommandBuffer();
         _oceanGeometry = GetComponent<OceanGeometry>();
-        _fft = new ComputeFFT(_size, _commandBuffer, compShaders.FFT);
+        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
         _gaussianNoise = GenerateGaussianNoise(_size);
 
-        _oceanCascade1 = new OceanCascade(compShaders, _commandBuffer);
-        _oceanCascade3 = new OceanCascade(compShaders, _commandBuffer);
-        _oceanCascade2 = new OceanCascade(compShaders, _commandBuffer);
+        _oceanCascade1 = new OceanCascade(_computeShaders, _commandBuffer);
+        _oceanCascade3 = new OceanCascade(_computeShaders, _commandBuffer);
+        _oceanCascade2 = new OceanCascade(_computeShaders, _commandBuffer);
         
         float boundary1 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
         float boundary2 = 2 * Mathf.PI / lengthScale3 * SomeMagicNumber;
@@ -86,6 +95,7 @@ public class OceanGenerator : MonoBehaviour
         _oceanCascade1.Init(_size, lengthScale1, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade2.Init(_size, lengthScale2, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade3.Init(_size, lengthScale3, boundary2, 999999, _oceanSettings, _fft, _gaussianNoise);
+        InitCascadeWrapper();
 
         AssignMaterialUniforms();
         _oceanGeometry.GenerateGrid(_material);
@@ -99,7 +109,7 @@ public class OceanGenerator : MonoBehaviour
         if(_commandBuffer == null)
             return;
         
-        _fft = new ComputeFFT(_size, _commandBuffer, compShaders.FFT);
+        _fft = new ComputeFFT(_size, _commandBuffer, _computeShaders.FFT);
         
         float boundary1 = 2 * Mathf.PI / lengthScale2 * SomeMagicNumber;
         float boundary2 = 2 * Mathf.PI / lengthScale3 * SomeMagicNumber;
@@ -107,8 +117,17 @@ public class OceanGenerator : MonoBehaviour
         _oceanCascade1.Init(_size, lengthScale1, 0.0001f, boundary1, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade2.Init(_size, lengthScale2, boundary1, boundary2, _oceanSettings, _fft, _gaussianNoise);
         _oceanCascade3.Init(_size, lengthScale3, boundary2, 999999, _oceanSettings, _fft, _gaussianNoise);
+        InitCascadeWrapper();
 
         AssignMaterialUniforms();
+    }
+    
+    private void InitCascadeWrapper()
+    {
+        _cascadeWrapperData.Kernel = _computeShaders.CascadeWrapper.FindKernel("WrapCascadeHeights");
+
+        _cascadeWrapperData.CascadeHeightsMap = Utilities.CreateRenderTexture(_size, RenderTextureFormat.ARGBFloat);
+        _cascadeWrapperData.CascadeHeightsMap.Create();
     }
     
     private void Update()
@@ -118,6 +137,7 @@ public class OceanGenerator : MonoBehaviour
         _oceanCascade1.Update(_time);
         _oceanCascade2.Update(_time);
         _oceanCascade3.Update(_time);
+        WrapCascadeHeights();
         
         // Execute the command buffer
         Graphics.ExecuteCommandBuffer(_commandBuffer);
@@ -128,23 +148,37 @@ public class OceanGenerator : MonoBehaviour
         _cascade3.texture = _oceanCascade3.GetInitSpectrumData().InitSpectrum;
     }
     
+    private void WrapCascadeHeights()
+    {
+        int kernel = _cascadeWrapperData.Kernel;
+        ComputeShader shader = _computeShaders.CascadeWrapper;
+        
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "CascadeHeight1", _oceanCascade1.GetTimeDependantSpectrumData().HeightMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "CascadeHeight2", _oceanCascade2.GetTimeDependantSpectrumData().HeightMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "CascadeHeight3", _oceanCascade3.GetTimeDependantSpectrumData().HeightMap);
+        _commandBuffer.SetComputeTextureParam(shader, kernel, "CascadeHeights", _cascadeWrapperData.CascadeHeightsMap);
+        
+        _commandBuffer.DispatchCompute(shader, kernel, _size / 8, _size / 8, 1);
+    }
+    
     private void AssignMaterialUniforms()
     {
-        _material.SetTexture(DisplacementMap1ID, _oceanCascade1.GetSpectrumWrapperData().DisplacementMap);
-        _material.SetTexture(DisplacementMap2ID, _oceanCascade2.GetSpectrumWrapperData().DisplacementMap);
-        _material.SetTexture(DisplacementMap3ID, _oceanCascade3.GetSpectrumWrapperData().DisplacementMap);
+        _material.SetTexture(_CascadeHeightsMapId, _cascadeWrapperData.CascadeHeightsMap);
+        _material.SetTexture(_HoriDisplacementMap1Id, _oceanCascade1.GetTimeDependantSpectrumData().HorizontalDisplacementMap);
+        _material.SetTexture(_HoriDisplacementMap2Id, _oceanCascade2.GetTimeDependantSpectrumData().HorizontalDisplacementMap);
+        _material.SetTexture(_HoriDisplacementMap3Id, _oceanCascade3.GetTimeDependantSpectrumData().HorizontalDisplacementMap);
         
-        _material.SetTexture(NormalMap1ID, _oceanCascade1.GetSpectrumWrapperData().NormalMap);
-        _material.SetTexture(NormalMap2ID, _oceanCascade2.GetSpectrumWrapperData().NormalMap);
-        _material.SetTexture(NormalMap3ID, _oceanCascade3.GetSpectrumWrapperData().NormalMap);
+        _material.SetTexture(_NormalMap1Id, _oceanCascade1.GetTimeDependantSpectrumData().HeightDerivative);
+        _material.SetTexture(_NormalMap2Id, _oceanCascade2.GetTimeDependantSpectrumData().HeightDerivative);
+        _material.SetTexture(_NormalMap3Id, _oceanCascade3.GetTimeDependantSpectrumData().HeightDerivative);
         
-        _material.SetTexture(FoamMap1, _oceanCascade1.GetSpectrumWrapperData().FoamMap);
-        _material.SetTexture(FoamMap2, _oceanCascade2.GetSpectrumWrapperData().FoamMap);
-        _material.SetTexture(FoamMap3, _oceanCascade3.GetSpectrumWrapperData().FoamMap);
+        _material.SetTexture(_FoamMap1Id, _oceanCascade1.GetSpectrumWrapperData().FoamMap);
+        _material.SetTexture(_FoamMap2Id, _oceanCascade2.GetSpectrumWrapperData().FoamMap);
+        _material.SetTexture(_FoamMap3Id, _oceanCascade3.GetSpectrumWrapperData().FoamMap);
         
-        _material.SetFloat(LengthScale1, lengthScale1);
-        _material.SetFloat(LengthScale2, lengthScale2);
-        _material.SetFloat(LengthScale3, lengthScale3);
+        _material.SetFloat(_LengthScale1Id, lengthScale1);
+        _material.SetFloat(_LengthScale2Id, lengthScale2);
+        _material.SetFloat(_LengthScale3Id, lengthScale3);
     }
 
     //Code from https://stackoverflow.com/a/218600
@@ -176,14 +210,24 @@ public class OceanGenerator : MonoBehaviour
         return Mathf.Cos(2 * Mathf.PI * Random.value) * Mathf.Sqrt(-2 * Mathf.Log(Random.value));
     }
     
-    public OceanCascade GetOceanCascade1()
+    public RenderTexture GetCascadeHeightsMap()
     {
-        return _oceanCascade1;
+        return _cascadeWrapperData.CascadeHeightsMap;
     }
     
     public float GetLengthScale1()
     {
         return lengthScale1;
+    }
+    
+    public float GetLengthScale2()
+    {
+        return lengthScale2;
+    }
+    
+    public float GetLengthScale3()
+    {
+        return lengthScale3;
     }
 
     private void OnDestroy()

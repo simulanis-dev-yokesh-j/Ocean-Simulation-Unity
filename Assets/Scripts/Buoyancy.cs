@@ -53,7 +53,9 @@ public class Buoyancy : MonoBehaviour
     [SerializeField] private float _voxelSize = 1;
 
     private const float _gravity = 9.81f;
-    private float _lengthScale;
+    private float _lengthScale1;
+    private float _lengthScale2;
+    private float _lengthScale3;
     private List<BuoyanceVoxel> _voxels;
     private bool _requested;
 
@@ -71,8 +73,10 @@ public class Buoyancy : MonoBehaviour
 
     private void Start()
     {
-        _heightMap = _oceanGenerator.GetOceanCascade1().GetTimeDependantSpectrumData().HeightMap;
-        _lengthScale = _oceanGenerator.GetLengthScale1();
+        _heightMap = _oceanGenerator.GetCascadeHeightsMap();
+        _lengthScale1 = _oceanGenerator.GetLengthScale1();
+        _lengthScale2 = _oceanGenerator.GetLengthScale2();
+        _lengthScale3 = _oceanGenerator.GetLengthScale3();
         _heightMapTexture = new Texture2D(_heightMap.width, _heightMap.height, TextureFormat.RGBAHalf, false);
         _heightMapTexture.wrapMode = TextureWrapMode.Repeat;
         
@@ -135,7 +139,7 @@ public class Buoyancy : MonoBehaviour
         ApplyForces();
         
         //Apply forward force
-        _rigidbody.AddForce(transform.forward * 8f);
+        _rigidbody.AddForce(transform.forward * 2f);
     }
     
     private void OnCompleteReadback(AsyncGPUReadbackRequest request)
@@ -154,10 +158,21 @@ public class Buoyancy : MonoBehaviour
         {
             var worldPoint = voxel.GetPosition();
             
-            int x = Mathf.FloorToInt(worldPoint.x / _lengthScale * 256);
-            int y = Mathf.FloorToInt(worldPoint.z / _lengthScale * 256);
-            var pixel = _heightMapTexture.GetPixel(x, y);
-            voxel.SetWaterHeight(pixel.r);
+            int x = Mathf.FloorToInt(worldPoint.x / _lengthScale1 * 256);
+            int y = Mathf.FloorToInt(worldPoint.z / _lengthScale1 * 256);
+            var pixel1 = _heightMapTexture.GetPixel(x, y);
+            
+            x = Mathf.FloorToInt(worldPoint.x / _lengthScale2 * 256);
+            y = Mathf.FloorToInt(worldPoint.z / _lengthScale2 * 256);
+            var pixel2 = _heightMapTexture.GetPixel(x, y);
+            
+            x = Mathf.FloorToInt(worldPoint.x / _lengthScale3 * 256);
+            y = Mathf.FloorToInt(worldPoint.z / _lengthScale3 * 256);
+            var pixel3 = _heightMapTexture.GetPixel(x, y);
+
+            var height = pixel1.r + pixel2.g + pixel3.b;
+            
+            voxel.SetWaterHeight(height);
         }
         
         _requested = false;

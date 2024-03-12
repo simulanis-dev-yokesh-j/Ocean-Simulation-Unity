@@ -1278,11 +1278,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01de09a5bb8864c15bec996ecb605056, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  compShaders:
+  _computeShaders:
     InitSpectrum: {fileID: 7200000, guid: 0a98bc5a99cf1450ebf29adbb5fc18cb, type: 3}
     TimeDependantSpectrum: {fileID: 7200000, guid: 5b1b76d088d10442d9eded9312eca732,
       type: 3}
     SpectrumWrapper: {fileID: 7200000, guid: ce81d37aee1894183aad5a31c1df0a27, type: 3}
+    CascadeWrapper: {fileID: 7200000, guid: 56244d8bd209f40fda9ae45055361085, type: 3}
     FFT: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
   _material: {fileID: 2100000, guid: 67fbac55d83f64253b4c13f8cb37bced, type: 2}
   _cascade1: {fileID: 783113521}
@@ -1295,11 +1296,11 @@ MonoBehaviour:
   lengthScale2: 256
   lengthScale3: 90
   _oceanSettings:
-    WindSpeed: 31
+    WindSpeed: 22
     WindAngle: 29.411175
     Depth: 500
     DistanceToShore: 500
-    WaveChopyFactor: 0.97
+    WaveChopyFactor: 0.95
     FoamIntensity: 0.75
     FoamDecay: 0.052
 --- !u!114 &432667429
@@ -1316,8 +1317,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _parent: {fileID: 1089990283}
   _ringSize: 512
-  _resolution: 512
-  _numRings: 12
+  _resolution: 256
+  _numRings: 6
 --- !u!1 &473910380
 GameObject:
   m_ObjectHideFlags: 0
@@ -2292,7 +2293,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1180350718}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00002561275, y: 0.982539, z: -0.18605697, w: -0.00013526712}
+  m_LocalRotation: {x: -0.000025611287, y: 0.982539, z: -0.18605693, w: -0.00013526712}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2639,9 +2640,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1476834889}
   serializedVersion: 4
-  m_Mass: 0.3
+  m_Mass: 0.25
   m_Drag: 1
-  m_AngularDrag: 1
+  m_AngularDrag: 3
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3056,7 +3057,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2089494928}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00002804221, y: 0.97341764, z: -0.22903751, w: -0.00011918136}
+  m_LocalRotation: {x: -0.00005522459, y: 0.97341764, z: -0.22903742, w: -0.00023470812}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

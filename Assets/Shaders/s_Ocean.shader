@@ -15,16 +15,18 @@ Shader "Unlit/Ocean"
         _Tweak2("Tweak2", Float) = 0.5
         _Tweak3("Tweak3", Float) = 0.5
         
-        _DisplacementMap1("Displacement Map1", 2D) = "white" {}
+        _CascadeHeightsMap("Cascade Heights Map", 2D) = "bump" {}
+        
+        _HoriDisplacementMap1("Hori Displacement Map1", 2D) = "bump" {}
+        _HoriDisplacementMap2("Hori Displacement Map2", 2D) = "bump" {}
+        _HoriDisplacementMap3("Hori Displacement Map3", 2D) = "bump" {}
+        
         _NormalMap1("Normal Map1", 2D) = "bump" {}
-        _FoamMap1("Foam Map1", 2D) = "white" {}
-        
-        _DisplacementMap2("Displacement Map2", 2D) = "white" {}
         _NormalMap2("Normal Map2", 2D) = "bump" {}
-        _FoamMap2("Foam Map2", 2D) = "white" {}
-        
-        _DisplacementMap3("Displacement Map3", 2D) = "white" {}
         _NormalMap3("Normal Map3", 2D) = "bump" {}
+        
+        _FoamMap1("Foam Map1", 2D) = "white" {}
+        _FoamMap2("Foam Map2", 2D) = "white" {}
         _FoamMap3("Foam Map3", 2D) = "white" {}
     }
     SubShader
@@ -57,9 +59,10 @@ Shader "Unlit/Ocean"
             uniform float _Tweak2;
             uniform float _Tweak3;
             
-            uniform sampler2D_half _DisplacementMap1;
-            uniform sampler2D_half _DisplacementMap2;
-            uniform sampler2D_half _DisplacementMap3;
+            uniform sampler2D_half _CascadeHeightsMap;
+            uniform sampler2D_half _HoriDisplacementMap1;
+            uniform sampler2D_half _HoriDisplacementMap2;
+            uniform sampler2D_half _HoriDisplacementMap3;
             
             uniform sampler2D_half _NormalMap1;
             uniform sampler2D_half _NormalMap2;
@@ -93,12 +96,22 @@ Shader "Unlit/Ocean"
                 v2f o;
 
                 float3 posWorld = mul(unity_ObjectToWorld, v.vertex);
+                float2 uvWorld1 = posWorld.xz / _LengthScale1;
+                float2 uvWorld2 = posWorld.xz / _LengthScale2;
+                float2 uvWorld3 = posWorld.xz / _LengthScale3;
 
-                float3 displacement = tex2Dlod(_DisplacementMap1, float4(posWorld.xz / _LengthScale1, 0, 0));
-                displacement += tex2Dlod(_DisplacementMap2, float4(posWorld.xz / _LengthScale2, 0, 0));
-                displacement += tex2Dlod(_DisplacementMap3, float4(posWorld.xz / _LengthScale3, 0, 0));
+                // Horizontal displacement
+                float2 horiDisplacement = tex2Dlod(_HoriDisplacementMap1, float4(uvWorld1, 0, 0)).rg;
+                horiDisplacement += tex2Dlod(_HoriDisplacementMap2, float4(uvWorld2, 0, 0)).rg;
+                horiDisplacement += tex2Dlod(_HoriDisplacementMap3, float4(uvWorld3, 0, 0)).rg;
                 
-                v.vertex.xyz += displacement;
+                // Vertical displacement
+                float height = tex2Dlod(_CascadeHeightsMap, float4(uvWorld1, 0, 0)).r;
+                height += tex2Dlod(_CascadeHeightsMap, float4(uvWorld2, 0, 0)).g;
+                height += tex2Dlod(_CascadeHeightsMap, float4(uvWorld3, 0, 0)).b;
+                
+                v.vertex.xz += horiDisplacement;
+                v.vertex.y += height;
                 posWorld = mul(unity_ObjectToWorld, v.vertex);
 
                 o.posWorld = posWorld;
@@ -123,11 +136,12 @@ Shader "Unlit/Ocean"
                 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
-                float3 derivatives = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0));
-                derivatives += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0));
-                derivatives += tex2Dlod(_NormalMap3, float4(uvWorld3, 0, 0));
                 
-                float3 normal = normalize(float3(-derivatives.x, 1, -derivatives.z));
+                float2 derivatives = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0)).rg;
+                derivatives += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0)).rg;
+                derivatives += tex2Dlod(_NormalMap3, float4(uvWorld3, 0, 0)).rg;
+                
+                float3 normal = normalize(float3(-derivatives.x, 1, -derivatives.y));
 
                 float part3 = _Tweak3 * normal;
                 float3 ambient = part3 * _WaterScatterColor * _LightColor0 + _DensityOfWaterBubbles * _AirBubblesColor * _LightColor0;
