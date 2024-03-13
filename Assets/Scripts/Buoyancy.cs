@@ -153,21 +153,22 @@ public class Buoyancy : MonoBehaviour
         var data = request.GetData<byte>();
         _heightMapTexture.LoadRawTextureData(data);
         _heightMapTexture.Apply();
+        var size = _heightMapTexture.width;
 
         foreach (var voxel in _voxels)
         {
             var worldPoint = voxel.GetPosition();
-            
-            int x = Mathf.FloorToInt(worldPoint.x / _lengthScale1 * 256);
-            int y = Mathf.FloorToInt(worldPoint.z / _lengthScale1 * 256);
+
+            int x = Mathf.FloorToInt((worldPoint.x % _lengthScale1) / _lengthScale1 * size);
+            int y = Mathf.FloorToInt((worldPoint.z % _lengthScale1) / _lengthScale1 * size);
             var pixel1 = _heightMapTexture.GetPixel(x, y);
             
-            x = Mathf.FloorToInt(worldPoint.x / _lengthScale2 * 256);
-            y = Mathf.FloorToInt(worldPoint.z / _lengthScale2 * 256);
+            x = Mathf.FloorToInt((worldPoint.x % _lengthScale2) / _lengthScale2 * size);
+            y = Mathf.FloorToInt((worldPoint.z % _lengthScale2) / _lengthScale2 * size);
             var pixel2 = _heightMapTexture.GetPixel(x, y);
             
-            x = Mathf.FloorToInt(worldPoint.x / _lengthScale3 * 256);
-            y = Mathf.FloorToInt(worldPoint.z / _lengthScale3 * 256);
+            x = Mathf.FloorToInt((worldPoint.x % _lengthScale3) / _lengthScale3 * size);
+            y = Mathf.FloorToInt((worldPoint.z % _lengthScale3) / _lengthScale3 * size);
             var pixel3 = _heightMapTexture.GetPixel(x, y);
 
             var height = pixel1.r + pixel2.g + pixel3.b;

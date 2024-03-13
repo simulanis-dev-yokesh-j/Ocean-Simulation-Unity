@@ -14,5 +14,6 @@ void WrapCascadeHeights (uint3 id : SV_DispatchThreadID)
     float h1 = CascadeHeight1[id.xy].r;
     float h2 = CascadeHeight2[id.xy].r;
     float h3 = CascadeHeight3[id.xy].r;
+    
     CascadeHeights[id.xy] = float4(h1, h2, h3, 1);
 }

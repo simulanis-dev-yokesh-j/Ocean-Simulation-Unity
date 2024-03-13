@@ -170,7 +170,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DensityOfWaterBubbles: 1.01
+    - _DensityOfWaterBubbles: 0.74
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -195,8 +195,8 @@ Material:
     - _SrcBlendAlpha: 1
     - _Surface: 0
     - _Tweak1: 0.14
-    - _Tweak2: 0.22
-    - _Tweak3: 0.09
+    - _Tweak2: 0.03
+    - _Tweak3: 0.15
     - _Tweak4: 0.72
     - _Twewk2: 0.05
     - _WorkflowMode: 1
