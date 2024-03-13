@@ -203,4 +203,9 @@ public class Buoyancy : MonoBehaviour
             Gizmos.DrawWireCube(voxel.GetPosition(), Vector3.one * _voxelSize);
         }
     }
+
+    private void OnDestroy()
+    {
+        _oceanGenerator.OnRuntimeUpdate -= OnRuntimeUpdate;
+    }
 }
