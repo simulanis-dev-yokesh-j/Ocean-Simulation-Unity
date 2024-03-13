@@ -79,8 +79,17 @@ public class Buoyancy : MonoBehaviour
         _lengthScale3 = _oceanGenerator.GetLengthScale3();
         _heightMapTexture = new Texture2D(_heightMap.width, _heightMap.height, TextureFormat.RGBAHalf, false);
         _heightMapTexture.wrapMode = TextureWrapMode.Repeat;
+        _oceanGenerator.OnRuntimeUpdate += OnRuntimeUpdate;
         
         PopulateVoxels();
+    }
+
+    private void OnRuntimeUpdate()
+    {
+        _heightMap = _oceanGenerator.GetCascadeHeightsMap();
+        _lengthScale1 = _oceanGenerator.GetLengthScale1();
+        _lengthScale2 = _oceanGenerator.GetLengthScale2();
+        _lengthScale3 = _oceanGenerator.GetLengthScale3();
     }
 
     private void PopulateVoxels()

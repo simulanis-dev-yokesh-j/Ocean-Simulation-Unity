@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
@@ -28,6 +29,8 @@ public class OceanSettings
 
 public class OceanGenerator : MonoBehaviour
 {
+    public event Action OnRuntimeUpdate; 
+    
     public struct CascadeWrapperData
     {
         public int Kernel;
@@ -120,6 +123,7 @@ public class OceanGenerator : MonoBehaviour
         InitCascadeWrapper();
 
         AssignMaterialUniforms();
+        OnRuntimeUpdate?.Invoke();
     }
     
     private void InitCascadeWrapper()

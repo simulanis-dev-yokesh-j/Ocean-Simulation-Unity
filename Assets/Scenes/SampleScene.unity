@@ -1292,9 +1292,9 @@ MonoBehaviour:
   SomeMagicNumber: 3
   _seed: 10
   _size: 256
-  lengthScale1: 600
+  lengthScale1: 700
   lengthScale2: 256
-  lengthScale3: 90
+  lengthScale3: 60
   _oceanSettings:
     WindSpeed: 21
     WindAngle: 29.411175
@@ -2293,7 +2293,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1180350718}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000025610645, y: 0.982539, z: -0.18605694, w: -0.00013526712}
+  m_LocalRotation: {x: -0.000025610583, y: 0.982539, z: -0.1860569, w: -0.00013526712}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3057,7 +3057,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2089494928}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000039235412, y: 0.97341764, z: -0.22903739, w: -0.0001667518}
+  m_LocalRotation: {x: -0.000044782362, y: 0.9734176, z: -0.2290375, w: -0.00019032578}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
