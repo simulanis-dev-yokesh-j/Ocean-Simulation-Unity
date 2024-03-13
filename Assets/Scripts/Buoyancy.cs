@@ -1,9 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class BuoyanceVoxel
 {
@@ -51,45 +47,29 @@ public class Buoyancy : MonoBehaviour
 {
     [SerializeField] private OceanGenerator _oceanGenerator;
     [SerializeField] private float _voxelSize = 1;
+    [SerializeField] private float _buoyancyFactor = 1f;
 
     private const float _gravity = 9.81f;
-    private float _lengthScale1;
-    private float _lengthScale2;
-    private float _lengthScale3;
     private List<BuoyanceVoxel> _voxels;
-    private bool _requested;
 
+    
+    private OceanCpuData _oceanCpuData;
     private BoxCollider _collider;
     private Rigidbody _rigidbody;
-    private RenderTexture _heightMap;
-    private Texture2D _heightMapTexture;
-    
+
 
     private void Awake()
     {
+        _oceanCpuData = _oceanGenerator.GetComponent<OceanCpuData>();
         _collider = GetComponent<BoxCollider>();
         _rigidbody = GetComponent<Rigidbody>();
     }
 
     private void Start()
     {
-        _heightMap = _oceanGenerator.GetCascadeHeightsMap();
-        _lengthScale1 = _oceanGenerator.GetLengthScale1();
-        _lengthScale2 = _oceanGenerator.GetLengthScale2();
-        _lengthScale3 = _oceanGenerator.GetLengthScale3();
-        _heightMapTexture = new Texture2D(_heightMap.width, _heightMap.height, TextureFormat.RGBAHalf, false);
-        _heightMapTexture.wrapMode = TextureWrapMode.Repeat;
-        _oceanGenerator.OnRuntimeUpdate += OnRuntimeUpdate;
-        
         PopulateVoxels();
-    }
-
-    private void OnRuntimeUpdate()
-    {
-        _heightMap = _oceanGenerator.GetCascadeHeightsMap();
-        _lengthScale1 = _oceanGenerator.GetLengthScale1();
-        _lengthScale2 = _oceanGenerator.GetLengthScale2();
-        _lengthScale3 = _oceanGenerator.GetLengthScale3();
+        
+        _oceanCpuData.OnHeightMapReceived += OnHeightMapReceived;
     }
 
     private void PopulateVoxels()
@@ -129,63 +109,43 @@ public class Buoyancy : MonoBehaviour
             
             var displacedVolume = voxel.GetDisplacedVolume();
             var buoyancyForce = displacedVolume * _gravity * Vector3.up  / _voxels.Count;
-            _rigidbody.AddForceAtPosition(buoyancyForce, voxel.GetPosition());
+            _rigidbody.AddForceAtPosition(buoyancyForce * _buoyancyFactor, voxel.GetPosition());
         }
-    }
-
-    private void RequestWaterHeight()
-    {
-        if(_requested)
-            return;
-        
-        _requested = true;
-        AsyncGPUReadback.Request(_heightMap, 0, 0, _heightMap.width, 0, _heightMap.height, 0, 1, TextureFormat.RGBAHalf, OnCompleteReadback);
     }
 
     private void FixedUpdate()
     {
-        RequestWaterHeight();
         ApplyForces();
-        
-        //Apply forward force
-        _rigidbody.AddForce(transform.forward * 2f);
     }
     
-    private void OnCompleteReadback(AsyncGPUReadbackRequest request)
+    private void OnHeightMapReceived(Texture2D heightTexture)
     {
-        if (request.hasError)
-        {
-            Debug.Log("Failed to read GPU texture");
-            return;
-        }
-
-        var data = request.GetData<byte>();
-        _heightMapTexture.LoadRawTextureData(data);
-        _heightMapTexture.Apply();
-        var size = _heightMapTexture.width;
-
+        var size = heightTexture.width;
+        
         foreach (var voxel in _voxels)
         {
             var worldPoint = voxel.GetPosition();
+            
+            var lengthScale1 = _oceanGenerator.GetLengthScale1();
+            var lengthScale2 = _oceanGenerator.GetLengthScale2();
+            var lengthScale3 = _oceanGenerator.GetLengthScale3();
 
-            int x = Mathf.FloorToInt((worldPoint.x % _lengthScale1) / _lengthScale1 * size);
-            int y = Mathf.FloorToInt((worldPoint.z % _lengthScale1) / _lengthScale1 * size);
-            var pixel1 = _heightMapTexture.GetPixel(x, y);
+            int x = Mathf.FloorToInt((worldPoint.x % lengthScale1) / lengthScale1 * size);
+            int y = Mathf.FloorToInt((worldPoint.z % lengthScale1) / lengthScale1 * size);
+            var pixel1 = heightTexture.GetPixel(x, y);
             
-            x = Mathf.FloorToInt((worldPoint.x % _lengthScale2) / _lengthScale2 * size);
-            y = Mathf.FloorToInt((worldPoint.z % _lengthScale2) / _lengthScale2 * size);
-            var pixel2 = _heightMapTexture.GetPixel(x, y);
+            x = Mathf.FloorToInt((worldPoint.x % lengthScale2) / lengthScale2 * size);
+            y = Mathf.FloorToInt((worldPoint.z % lengthScale2) / lengthScale2 * size);
+            var pixel2 = heightTexture.GetPixel(x, y);
             
-            x = Mathf.FloorToInt((worldPoint.x % _lengthScale3) / _lengthScale3 * size);
-            y = Mathf.FloorToInt((worldPoint.z % _lengthScale3) / _lengthScale3 * size);
-            var pixel3 = _heightMapTexture.GetPixel(x, y);
+            x = Mathf.FloorToInt((worldPoint.x % lengthScale3) / lengthScale3 * size);
+            y = Mathf.FloorToInt((worldPoint.z % lengthScale3) / lengthScale3 * size);
+            var pixel3 = heightTexture.GetPixel(x, y);
 
             var height = pixel1.r + pixel2.g + pixel3.b;
             
             voxel.SetWaterHeight(height);
         }
-        
-        _requested = false;
     }
 
     private void OnDrawGizmos()
@@ -202,10 +162,5 @@ public class Buoyancy : MonoBehaviour
             
             Gizmos.DrawWireCube(voxel.GetPosition(), Vector3.one * _voxelSize);
         }
-    }
-
-    private void OnDestroy()
-    {
-        _oceanGenerator.OnRuntimeUpdate -= OnRuntimeUpdate;
     }
 }
