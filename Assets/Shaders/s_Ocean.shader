@@ -9,6 +9,8 @@ Shader "Unlit/Ocean"
         [HDR] _SpecColor ("Specular Color", Color) = (1, 1, 1, 1)
         _Shininess ("Shininess", Float) = 10
         _Reflectivity("Reflectivity", Range(0, 1)) = 0.1
+        _DepthColor("Depth Color", Color) = (1, 1, 1, 1)
+        _DepthFactor("Depth Factor", Range(0, 2)) = 1
         
         _DensityOfWaterBubbles("Density of Water Bubbles", Float) = 0.5
         _Tweak1("Tweak1", Float) = 0.05
@@ -46,13 +48,17 @@ Shader "Unlit/Ocean"
 
             #include "UnityCG.cginc"
 
-            uniform float4 _LightColor0; //From UnityCG
+            // Unity built-in variables
+            uniform float4 _LightColor0;
+            uniform sampler2D _CameraDepthTexture; 
             
             uniform float4 _WaterScatterColor;
             uniform float4 _AirBubblesColor;
             uniform float4 _SpecColor;
             uniform float _Shininess;
             uniform float _Reflectivity;
+            uniform float4 _DepthColor;
+            uniform float _DepthFactor;
 
             uniform float _DensityOfWaterBubbles;
             uniform float _Tweak1;
@@ -88,7 +94,8 @@ Shader "Unlit/Ocean"
                 float2 uv : TEXCOORD0;
                 float3 posWorld : TEXCOORD1;
                 float2 uvWorld : TEXCOORD2;
-                UNITY_FOG_COORDS(3)
+                float4 posScreen : TEXCOORD3;
+                UNITY_FOG_COORDS(4)
             };
 
             v2f vert (appdata v)
@@ -118,6 +125,7 @@ Shader "Unlit/Ocean"
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
                 o.uvWorld = posWorld.xz;
+                o.posScreen = ComputeScreenPos(o.pos);
                 UNITY_TRANSFER_FOG(o, o.pos);
                 return o;
             }
@@ -153,17 +161,26 @@ Shader "Unlit/Ocean"
                 float spec = pow(max(dot(viewDirection, reflectDir), 0.0), _Shininess);
                 float3 specular = _LightColor0.rgb * (spec * _SpecColor) * fresnel;  
 
-                //float part1 = _Tweak1 * max(0, posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f) * pow(0.5f - 0.5f * dot(sunDirection, normal), 3.0f);
+                // Scattering
                 float part1 = _Tweak1 * max(0, posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f);
 				float part2 = _Tweak2 * pow(DotClamped(viewDirection, normal), 2.0f);
-                
 				float3 scatter = (part1 + part2) * _WaterScatterColor * _LightColor0;
 
+                // Reflection
                 float3 I = normalize(posWorld - _WorldSpaceCameraPos);
                 half4 skyData = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, reflect(I, normal));
                 half3 envReflection = _Reflectivity * DecodeHDR (skyData, unity_SpecCube0_HDR);
 
-                float3 output = ambient + scatter + specular + envReflection;
+                // Depth
+                float2 screenUV = i.posScreen.xy / i.posScreen.w;
+                float backgroundDepth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV));
+                float surfaceDepth = UNITY_Z_0_FAR_FROM_CLIPSPACE(i.posScreen.z);
+                float depthDifference = (backgroundDepth - surfaceDepth) / 20;
+                float depth = saturate(1 - depthDifference - _DepthFactor);
+                float3 depthColor = _DepthColor.rgb * depth;
+                float transparency = lerp(1, _DepthColor.w, depth);
+
+                float3 output = ambient + scatter + specular + envReflection + depthColor;
 
                 float foam = tex2D(_FoamMap1, uvWorld1).r;
                 foam += tex2D(_FoamMap2, uvWorld2).r;
@@ -178,7 +195,7 @@ Shader "Unlit/Ocean"
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, output);
                 
-                return float4(output, 1);
+                return float4(output, transparency);
             }
             ENDCG
         }
