@@ -1,0 +1,56 @@
+This is BibTeX, Version 0.99d (TeX Live 2023)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: finalReport.aux
+The style file: unsrt.bst
+A level-1 auxiliary file: prelude.aux
+A level-1 auxiliary file: ./chapters/chapter1.aux
+A level-1 auxiliary file: ./chapters/chapter2.aux
+A level-1 auxiliary file: ./chapters/chapter3.aux
+A level-1 auxiliary file: ./chapters/chapter4.aux
+A level-1 auxiliary file: appendices.aux
+Database file #1: refs.bib
+Warning--empty journal in hughes1984
+Warning--empty journal in flugge2017
+Warning--empty booktitle in mark2021
+You've used 19 entries,
+            1791 wiz_defined-function locations,
+            575 strings with 6665 characters,
+and the built_in function-call counts, 4129 in all, are:
+= -- 363
+> -- 170
+< -- 3
++ -- 66
+- -- 47
+* -- 263
+:= -- 664
+add.period$ -- 59
+call.type$ -- 19
+change.case$ -- 17
+chr.to.int$ -- 0
+cite$ -- 22
+duplicate$ -- 194
+empty$ -- 416
+format.name$ -- 47
+if$ -- 913
+int.to.chr$ -- 0
+int.to.str$ -- 19
+missing$ -- 21
+newline$ -- 99
+num.names$ -- 19
+pop$ -- 58
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 86
+stack$ -- 0
+substring$ -- 253
+swap$ -- 38
+text.length$ -- 3
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 3
+while$ -- 40
+width$ -- 21
+write$ -- 205
+(There were 3 warnings)
