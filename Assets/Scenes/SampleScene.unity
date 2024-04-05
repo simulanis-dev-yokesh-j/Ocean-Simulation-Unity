@@ -1341,15 +1341,11 @@ MonoBehaviour:
   _cascadeSettings1:
     LengthScale: 512
     LowCutoff: 0
-    HighCutoff: 9999
+    HighCutoff: 1
   _cascadeSettings2:
-    LengthScale: 0
-    LowCutoff: 0
-    HighCutoff: 0
-  _cascadeSettings3:
-    LengthScale: 0
-    LowCutoff: 0
-    HighCutoff: 0
+    LengthScale: 512
+    LowCutoff: 1
+    HighCutoff: 9999
   _material: {fileID: 2100000, guid: 67fbac55d83f64253b4c13f8cb37bced, type: 2}
 --- !u!114 &432667429
 MonoBehaviour:
