@@ -85,12 +85,6 @@ Jerry Tessendorf.
 \newblock Interactive water surfaces.
 \newblock {\em Game Programming Gems}, 4(265-274):8, 2004.
 
-\bibitem{mark2021}
-Mark Mihelich and Tim Tcheblokov.
-\newblock Wakes, explosions and lighting: Interactive water simulation in atlas.
-\newblock 2021.
-\newblock \url{https://youtu.be/Dqld965-Vv0?si=Jy0_un81KjUsWmk6}.
-
 \bibitem{tessendorf2014}
 Jerry Tessendorf.
 \newblock ewave: Using an exponential solver on the iwave problem.

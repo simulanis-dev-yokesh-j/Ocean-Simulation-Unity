@@ -197,67 +197,86 @@ Once again we need to perform IFFT \ref{fig:ifft_algorithm} to get horizontal di
 
 \section{Ocean Shading}
 
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|c|c|c|}
-        \hline
-        \textbf{Symbol} & \textbf{Parameter} \\
-        \hline
-        $L_A$ & Ambient Light \\
-        \hline
-        $N$ & Normal \\
-        \hline
-        $D_V$ & View Direction \\
-        \hline
-        $C_A$ & Ambient Light Color \\
-        \hline
-        $C_L$ & Light Color \\
-        \hline
-        $C_B$ & Air Bubble Color \\
-        \hline
-        $F$ & Fresnel Effect \\
-        \hline
-        $\rho_a$ & Air Bubble Density \\
-        \hline
-        $k_A$ & Ambient Light Intensity \\
-        \hline
-    \end{tabular}
-    \caption{Lighting Parameters}
-    \label{table:lighting_parameters}
-\end{table}
+% \begin{table}[H]
+%     \centering
+%     \begin{tabular}{|c|c|c|}
+%         \hline
+%         \textbf{Symbol} & \textbf{Parameter} \\
+%         \hline
+%         $L_A$ & Ambient Light \\
+%         \hline
+%         $N$ & Normal \\
+%         \hline
+%         $D_S$ & Sun Direction \\
+%         \hline
+%         $D_V$ & View Direction \\
+%         \hline
+%         $C_A$ & Ambient Light Color \\
+%         \hline
+%         $C_L$ & Light Color \\
+%         \hline
+%         $C_B$ & Air Bubble Color \\
+%         \hline
+%         $C_{WS}$ & Water Scattering Color \\
+%         \hline
+%         $H$ & Ocean Height \\
+%         \hline
+%         $F$ & Fresnel Effect \\
+%         \hline
+%         $\rho_a$ & Air Bubble Density \\
+%         \hline
+%         $k_A$ & Ambient Light Intensity \\
+%         \hline
+%         $k_{S_1}$ & Subsurface Scattering Intensity \\
+%         \hline
+%         $k_{S_2}$ & Subsurface Scattering Intensity \\
+%         \hline
+%     \end{tabular}
+%     \caption{Lighting Parameters}
+%     \label{table:lighting_parameters}
+% \end{table}
 
 \subsection{Lighting}
 
-\subsubsection{Ambient Light}
-Ambient light is light that does not come from any specific light source, but rather result of light being scattered in the environment. It is constant and does not depend on the direction of the light source.
-For ocean we use  ambient light aproximation formula taken from GDC confference \cite{mark2021}:
-\begin{equation}
-    L_A = k_A N C_A C_L + \rho_a C_B C_L
-\end{equation}
+% \subsubsection{Ambient Light}
+% Ambient light is light that does not come from any specific light source, but rather result of light being scattered in the environment. It is constant and does not depend on the direction of the light source.
+% For ocean we use  ambient light aproximation formula taken from GDC confference \cite{mark2021}:
+% \begin{equation}
+%     L_A = k_A N C_A C_L + \rho_a C_B C_L
+% \end{equation}
 
-\subsubsection{Fresnel Effect}
-Fresnel effect is the phenomenon where light is more reflective at grazing angles. This effect will be importatnt for specular and reflection calculations.
-Approximation formula ctakes form of:
-\begin{equation}
-    F = (1 - \max(D_V \cdot N, 0.15))^{5}
-\end{equation}
+% \subsubsection{Fresnel Effect}
+% Fresnel effect is the phenomenon where light is more reflective at grazing angles. This effect will be importatnt for specular and reflection calculations.
+% Approximation formula ctakes form of:
+% \begin{equation}
+%     F = (1 - \max(D_V \cdot N, 0.15))^{5}
+% \end{equation}
 
-\subsubsection{Subsurface Scattering}
-\begin{equation}
-    \begin{split}
-        L_S &= (L_S1 + L_S2) C_{WS} C_L\\
-        L_S1 &= k_S1 \max(0, H) ([D_S, -D_V])^{4}(0.5-0.5(D_s \cdot N))^{3}\\
-        L_S2 &= k_S2 ([D_V, N])^{2}
-    \end{split}
-\end{equation}
+% \subsubsection{Subsurface Scattering}
+% \begin{equation}
+%     \begin{split}
+%         L_S &= (L_{S_1} + L_{S_2}) C_{WS} C_L\\
+%         L_{S_1} &= k_{S_1} \max(0, H) ([D_S, -D_V])^{4}(0.5-0.5(D_s \cdot N))^{3}\\
+%         L_{S_2} &= k_{S_2} ([D_V, N])^{2}
+%     \end{split}
+% \end{equation}
 
-\subsubsection{Specular Reflection}
+% \subsubsection{Specular Reflection}
+% \begin{equation}
+%     \begin{split}
+%         D_r 
+%     \end{split}
+% \end{equation}
 
-\subsubsection{Reflection}
+% \subsubsection{Reflection}
 
-\subsubsection{Output}
+% \subsubsection{Output}
 
 \subsection{Foam}
+Ocean foam is one of the most features about ocean. It makes the ocean more defined and relistic.
+The main place where foam occures is wave crashes. Horizotanl displacement allows these wave crashes, and we can observe these wave crashes when we have set 
+To render foam \cite[J. Tessendorf]{tessendorf2001} suggests to calculate the determinant of jacobian matrix for horizontal displacement.
+In our ocean simulation jacobian matrix tells us how much change there is over x and z axis.
 
 % Before we start, all callculations were taken inside GPU, using HLSL language. This allows us to use parallelism and speed up the process dramatically.
 % As FFT requires our sample data length be power of 2, we will use $n \cdot n = 512 \text{x} 512$ textures to represent our data.

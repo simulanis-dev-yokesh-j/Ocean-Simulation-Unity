@@ -1,10 +1,10 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.2)  4 APR 2024 16:27
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.2)  5 APR 2024 16:10
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**"/Users/sauliusvincevicius/Documents/University/Year 3/Personal Project/Final-Report/finalReport.tex"
-(/Users/sauliusvincevicius/Documents/University/Year 3/Personal Project/Final-Report/finalReport.tex
+**"/Users/sauliusvincevicius/Documents/Unity Projects/Realistic-Ocean/Final-Report/finalReport.tex"
+(/Users/sauliusvincevicius/Documents/Unity Projects/Realistic-Ocean/Final-Report/finalReport.tex
 LaTeX2e <2022-11-01> patch level 1
 L3 programming layer <2023-02-22> (/usr/local/texlive/2023/texmf-dist/tex/latex/base/book.cls
 Document Class: book 2022/07/02 v1.4n Standard LaTeX document class
@@ -756,12 +756,12 @@ Package caption Warning: The option `hypcap=true' will be ignored for this
 (caption)                particular \caption on input line 194.
 See the caption package documentation for explanation.
 
-[15 <./images/rendered_height_choppy.png>]) [16]
+) [15 <./images/rendered_height_choppy.png>]
 \openout2 = `./chapters/chapter3.aux'.
 
  (./chapters/chapter3.tex
 Chapter 3.
-) [17
+) [16
 
 
 
@@ -771,45 +771,45 @@ Chapter 3.
 
  (./chapters/chapter4.tex
 Chapter 4.
-) [18
+) [17
 
 
 
 
-] (./finalReport.bbl [19
+] (./finalReport.bbl [18
 
 
 
-]) [20]
+]) [19]
 \openout2 = `appendices.aux'.
 
  (./appendices.tex
 Appendix A.
-[21
+[20
 
 
 
 ]
 Appendix B.
-) [22
+) [21
 
 ] (./finalReport.aux (./prelude.aux) (./chapters/chapter1.aux) (./chapters/chapter2.aux) (./chapters/chapter3.aux) (./chapters/chapter4.aux) (./appendices.aux))
 Package rerunfilecheck Info: File `finalReport.out' has not changed.
-(rerunfilecheck)             Checksum: A858B6EF502748E8A040BD88353815A4;6234.
+(rerunfilecheck)             Checksum: 57084F84E1FAE79F84C13211361700FD;6233.
  ) 
 Here is how much of TeX's memory you used:
- 16636 strings out of 476025
- 269181 string characters out of 5790017
+ 16620 strings out of 476025
+ 268924 string characters out of 5790017
  1896388 words of memory out of 5000000
- 36596 multiletter control sequences out of 15000+600000
+ 36592 multiletter control sequences out of 15000+600000
  532802 words of font info for 72 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 91i,18n,120p,1286b,1095s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 91i,18n,120p,1282b,1095s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfbx2074.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfbx2488.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfsl1095.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sfti1095.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
-Output written on finalReport.pdf (28 pages, 19807279 bytes).
+Output written on finalReport.pdf (27 pages, 19797625 bytes).
 PDF statistics:
- 670 PDF objects out of 1000 (max. 8388607)
- 564 compressed objects within 6 object streams
- 174 named destinations out of 1000 (max. 500000)
+ 652 PDF objects out of 1000 (max. 8388607)
+ 547 compressed objects within 6 object streams
+ 162 named destinations out of 1000 (max. 500000)
  399 words of extra memory for PDF output out of 10000 (max. 10000000)
 

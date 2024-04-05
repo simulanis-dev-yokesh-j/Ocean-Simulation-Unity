@@ -22,28 +22,22 @@
 \contentsline {subsection}{\numberline {2.2.4}Choppy Waves}{14}{subsection.2.2.4}%
 \contentsline {section}{\numberline {2.3}Ocean Shading}{15}{section.2.3}%
 \contentsline {subsection}{\numberline {2.3.1}Lighting}{15}{subsection.2.3.1}%
-\contentsline {subsubsection}{Ambient Light}{15}{subsubsection*.6}%
-\contentsline {subsubsection}{Fresnel Effect}{15}{subsubsection*.7}%
-\contentsline {subsubsection}{Subsurface Scattering}{16}{subsubsection*.8}%
-\contentsline {subsubsection}{Specular Reflection}{16}{subsubsection*.9}%
-\contentsline {subsubsection}{Reflection}{16}{subsubsection*.10}%
-\contentsline {subsubsection}{Output}{16}{subsubsection*.11}%
-\contentsline {subsection}{\numberline {2.3.2}Foam}{16}{subsection.2.3.2}%
-\contentsline {chapter}{\numberline {3}Results}{17}{chapter.3}%
-\contentsline {section}{\numberline {3.1}A section}{17}{section.3.1}%
-\contentsline {subsection}{\numberline {3.1.1}A sub-section}{17}{subsection.3.1.1}%
-\contentsline {section}{\numberline {3.2}Another section}{17}{section.3.2}%
-\contentsline {chapter}{\numberline {4}Discussion}{18}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Conclusions}{18}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Ideas for future work}{18}{section.4.2}%
-\contentsline {chapter}{References}{19}{section.4.2}%
-\contentsline {chapter}{Appendices}{21}{section*.13}%
-\contentsline {chapter}{\numberline {A}Self-appraisal}{21}{appendix.a.A}%
-\contentsline {section}{\numberline {A.1}Critical self-evaluation}{21}{section.a.A.1}%
-\contentsline {section}{\numberline {A.2}Personal reflection and lessons learned}{21}{section.a.A.2}%
-\contentsline {section}{\numberline {A.3}Legal, social, ethical and professional issues}{21}{section.a.A.3}%
-\contentsline {subsection}{\numberline {A.3.1}Legal issues}{21}{subsection.a.A.3.1}%
-\contentsline {subsection}{\numberline {A.3.2}Social issues}{21}{subsection.a.A.3.2}%
-\contentsline {subsection}{\numberline {A.3.3}Ethical issues}{21}{subsection.a.A.3.3}%
-\contentsline {subsection}{\numberline {A.3.4}Professional issues}{21}{subsection.a.A.3.4}%
-\contentsline {chapter}{\numberline {B}External Material}{22}{appendix.a.B}%
+\contentsline {subsection}{\numberline {2.3.2}Foam}{15}{subsection.2.3.2}%
+\contentsline {chapter}{\numberline {3}Results}{16}{chapter.3}%
+\contentsline {section}{\numberline {3.1}A section}{16}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}A sub-section}{16}{subsection.3.1.1}%
+\contentsline {section}{\numberline {3.2}Another section}{16}{section.3.2}%
+\contentsline {chapter}{\numberline {4}Discussion}{17}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Conclusions}{17}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Ideas for future work}{17}{section.4.2}%
+\contentsline {chapter}{References}{18}{section.4.2}%
+\contentsline {chapter}{Appendices}{20}{section*.6}%
+\contentsline {chapter}{\numberline {A}Self-appraisal}{20}{appendix.a.A}%
+\contentsline {section}{\numberline {A.1}Critical self-evaluation}{20}{section.a.A.1}%
+\contentsline {section}{\numberline {A.2}Personal reflection and lessons learned}{20}{section.a.A.2}%
+\contentsline {section}{\numberline {A.3}Legal, social, ethical and professional issues}{20}{section.a.A.3}%
+\contentsline {subsection}{\numberline {A.3.1}Legal issues}{20}{subsection.a.A.3.1}%
+\contentsline {subsection}{\numberline {A.3.2}Social issues}{20}{subsection.a.A.3.2}%
+\contentsline {subsection}{\numberline {A.3.3}Ethical issues}{20}{subsection.a.A.3.3}%
+\contentsline {subsection}{\numberline {A.3.4}Professional issues}{20}{subsection.a.A.3.4}%
+\contentsline {chapter}{\numberline {B}External Material}{21}{appendix.a.B}%

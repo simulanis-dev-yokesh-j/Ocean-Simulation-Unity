@@ -11,46 +11,45 @@ A level-1 auxiliary file: appendices.aux
 Database file #1: refs.bib
 Warning--empty journal in hughes1984
 Warning--empty journal in flugge2017
-Warning--empty booktitle in mark2021
-You've used 19 entries,
+You've used 18 entries,
             1791 wiz_defined-function locations,
-            575 strings with 6665 characters,
-and the built_in function-call counts, 4129 in all, are:
-= -- 363
-> -- 170
+            571 strings with 6502 characters,
+and the built_in function-call counts, 3949 in all, are:
+= -- 350
+> -- 162
 < -- 3
-+ -- 66
-- -- 47
-* -- 263
-:= -- 664
-add.period$ -- 59
-call.type$ -- 19
-change.case$ -- 17
++ -- 63
+- -- 45
+* -- 258
+:= -- 636
+add.period$ -- 55
+call.type$ -- 18
+change.case$ -- 16
 chr.to.int$ -- 0
-cite$ -- 22
-duplicate$ -- 194
-empty$ -- 416
-format.name$ -- 47
-if$ -- 913
+cite$ -- 20
+duplicate$ -- 183
+empty$ -- 393
+format.name$ -- 45
+if$ -- 871
 int.to.chr$ -- 0
-int.to.str$ -- 19
-missing$ -- 21
-newline$ -- 99
-num.names$ -- 19
-pop$ -- 58
+int.to.str$ -- 18
+missing$ -- 20
+newline$ -- 93
+num.names$ -- 18
+pop$ -- 51
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 86
+skip$ -- 82
 stack$ -- 0
 substring$ -- 253
-swap$ -- 38
+swap$ -- 37
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 0
-warning$ -- 3
-while$ -- 40
-width$ -- 21
-write$ -- 205
-(There were 3 warnings)
+warning$ -- 2
+while$ -- 39
+width$ -- 20
+write$ -- 194
+(There were 2 warnings)
