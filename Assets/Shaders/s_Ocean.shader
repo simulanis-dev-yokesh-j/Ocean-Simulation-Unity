@@ -15,9 +15,14 @@ Shader "Unlit/Ocean"
         _Tweak2("Tweak2", Float) = 0.5
         _Tweak3("Tweak3", Float) = 0.5
         
-        _DisplacementMap("Displacement Map", 2D) = "white" {}
-        _NormalMap("Normal Map", 2D) = "bump" {}
-        _FoamMap("Foam Map", 2D) = "white" {}
+        _DisplacementMap1("Displacement Map 1", 2D) = "white" {}
+        _DisplacementMap2("Displacement Map 2", 2D) = "white" {}
+        
+        _NormalMap1("Normal Map 1", 2D) = "bump" {}
+        _NormalMap2("Normal Map 2", 2D) = "bump" {}
+        
+        _FoamMap1("Foam Map 1", 2D) = "white" {}
+        _FoamMap2("Foam Map 2", 2D) = "white" {}
     }
     SubShader
     {
@@ -49,10 +54,10 @@ Shader "Unlit/Ocean"
             uniform float _Tweak2;
             uniform float _Tweak3;
             
-            uniform sampler2D_half _DisplacementMap;
-            uniform sampler2D_half _NormalMap;
-            uniform sampler2D_half _FoamMap;
-            uniform float _LengthScale;
+            uniform sampler2D_half _DisplacementMap1;
+            uniform sampler2D_half _NormalMap1;
+            uniform sampler2D_half _FoamMap1;
+            uniform float _LengthScale1;
 
             struct appdata
             {
@@ -74,9 +79,9 @@ Shader "Unlit/Ocean"
                 v2f o;
 
                 float3 posWorld = mul(unity_ObjectToWorld, v.vertex);
-                float2 uvWorld = posWorld.xz / _LengthScale;
+                float2 uvWorld = posWorld.xz / _LengthScale1;
                 
-                float3 displacement = tex2Dlod(_DisplacementMap, float4(uvWorld, 0, 0));
+                float3 displacement = tex2Dlod(_DisplacementMap1, float4(uvWorld, 0, 0));
                 v.vertex.x += displacement.x;
                 v.vertex.y = displacement.y;
                 v.vertex.z += displacement.z;
@@ -106,7 +111,7 @@ Shader "Unlit/Ocean"
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
                 float3 halfVector = normalize(sunDirection + viewDirection);
 
-                float2 derivatives = tex2Dlod(_NormalMap, float4(uvWorld, 0, 0)).rg;
+                float2 derivatives = tex2Dlod(_NormalMap1, float4(uvWorld, 0, 0)).rg;
                 float3 normal = normalize(float3(-derivatives.x, 1, -derivatives.y));
 
                 float part3 = _Tweak3 * normal;
@@ -130,7 +135,7 @@ Shader "Unlit/Ocean"
 
                 float3 output = ambient + scatter + specular + envReflection;
 
-                float foam = tex2D(_FoamMap, uvWorld).r;
+                float foam = tex2D(_FoamMap1, uvWorld).r;
 
                 if(foam > 0)
                 {
