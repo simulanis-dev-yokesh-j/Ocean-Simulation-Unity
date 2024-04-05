@@ -171,7 +171,7 @@ Material:
     - _Reflectivity: 0.15
     - _RefractiveIndex: 0.76
     - _Scale: 1
-    - _Shininess: 33
+    - _Shininess: 50
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
