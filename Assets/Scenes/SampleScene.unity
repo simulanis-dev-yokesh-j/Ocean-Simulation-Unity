@@ -1328,25 +1328,29 @@ MonoBehaviour:
       type: 3}
     SpectrumWrapper: {fileID: 7200000, guid: ce81d37aee1894183aad5a31c1df0a27, type: 3}
     FFT: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
+  _oceanSettings:
+    Seed: 10
+    Size: 512
+    WindSpeed: 31
+    WindAngle: 45
+    Depth: 500
+    DistanceToShore: 1000
+    WaveChopyFactor: 0.9
+    FoamIntensity: 0.45
+    FoamDecay: 0.08
+  _cascadeSettings1:
+    LengthScale: 512
+    LowCutoff: 0
+    HighCutoff: 9999
+  _cascadeSettings2:
+    LengthScale: 0
+    LowCutoff: 0
+    HighCutoff: 0
+  _cascadeSettings3:
+    LengthScale: 0
+    LowCutoff: 0
+    HighCutoff: 0
   _material: {fileID: 2100000, guid: 67fbac55d83f64253b4c13f8cb37bced, type: 2}
-  _gaussianNoiseImage: {fileID: 200030529}
-  _spectrumMapImage: {fileID: 2138357741}
-  _frequencyDomainImage: {fileID: 900680224}
-  _hightMapImage: {fileID: 295894770}
-  _normalMapImage: {fileID: 783113521}
-  _horizontalDisplacementMapImage: {fileID: 424351531}
-  _foamMapImage: {fileID: 2005065228}
-  _seed: 10
-  _size: 1024
-  _lengthScale: 1024
-  _speed: 1
-  _windSpeed: 31
-  _windAngle: 45
-  _depth: 500
-  _distanceToShore: 1000
-  _waveChopyFactor: 0.9
-  _foamIntensity: 0.45
-  _foamDecay: 0.08
 --- !u!114 &432667429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1360,9 +1364,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _parent: {fileID: 1089990283}
-  _ringSize: 1024
-  _resolution: 1024
-  _numRings: 10
+  _ringSize: 512
+  _resolution: 512
+  _numRings: 1
 --- !u!1 &503036186
 GameObject:
   m_ObjectHideFlags: 0

@@ -22,7 +22,7 @@ void ComputeWrapper (uint3 id : SV_DispatchThreadID)
 {
     float tangent = HeightDerivative[id.xy].x;
     float bitangent = HeightDerivative[id.xy].y;
-    float3 normal = normalize(float3(-tangent, 1, -bitangent));
+    //float3 normal = normalize(float3(-tangent, 1, -bitangent));
 
     float j_xx = 1 + DisplacementFactor * JacobianXxZzMap[id.xy].x;
     float j_zz = 1 + DisplacementFactor * JacobianXxZzMap[id.xy].y;
@@ -35,7 +35,7 @@ void ComputeWrapper (uint3 id : SV_DispatchThreadID)
     float accumulation = FoamMap[id.xy].x - FoamDecay * DeltaTime / max(jacobian, 0.5);
     float foam = max(accumulation, jacobian);
 
-    NormalMap[id.xy] = float4(normal.x, normal.y, normal.z, 1);
+    NormalMap[id.xy] = float4(tangent, bitangent, 0, 1);
     DisplacementMap[id.xy] = float4(DisplacementFactor * HorizontalDisplacementMap[id.xy].x, HeightMap[id.xy].x, DisplacementFactor * HorizontalDisplacementMap[id.xy].y, 1);
     FoamMap[id.xy] = float4(foam, foam, foam, 1);
 }
