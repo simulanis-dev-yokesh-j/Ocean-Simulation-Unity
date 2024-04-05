@@ -14,8 +14,6 @@ public class OceanGeometry : MonoBehaviour
         {
             GenerateRing(i, material);
         }
-        
-        //GenerateRing(2, material);
     }
 
     private void GenerateRing(int ringNumber, Material material)
@@ -58,7 +56,7 @@ public class OceanGeometry : MonoBehaviour
         {
             for (int x = 0; x <= resolution; x++)
             {
-                vertices[vertIndex] = new Vector3(size * (x * increment - .5f) + startPoint.x, 0, size * (y * increment - .5f) + startPoint.y);
+                vertices[vertIndex] = new Vector3(size * x * increment + startPoint.x, 0, size * y * increment - startPoint.y);
 
                 if (x != resolution && y != resolution)
                 {
