@@ -1331,15 +1331,15 @@ MonoBehaviour:
   _oceanSettings:
     Seed: 10
     Size: 256
-    WindSpeed: 31
+    WindSpeed: 21
     WindAngle: 45
     Depth: 500
     DistanceToShore: 1000
     WaveChopyFactor: 0.9
     FoamIntensity: 0.75
-    FoamDecay: 0.08
+    FoamDecay: 0.055
   _cascadeSettings1:
-    LengthScale: 765
+    LengthScale: 512
     LowCutoff: 0
     HighCutoff: 1
   _cascadeSettings2:

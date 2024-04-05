@@ -81,20 +81,19 @@ Shader "Unlit/Ocean"
                 float4 pos : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 posWorld : TEXCOORD1;
-                float2 uvWorld1 : TEXCOORD2;
-                float2 uvWorld2 : TEXCOORD3;
-                float2 uvWorld3 : TEXCOORD4;
-                UNITY_FOG_COORDS(5)
+                float2 uvWorld : TEXCOORD2;
+                UNITY_FOG_COORDS(3)
             };
 
             v2f vert (appdata v)
             {
                 v2f o;
 
-                float3 posWorld = mul(unity_ObjectToWorld, v.vertex);
-                float2 uvWorld1 = posWorld.xz / _LengthScale1;
-                float2 uvWorld2 = posWorld.xz / _LengthScale2;
-                float2 uvWorld3 = posWorld.xz / _LengthScale3;
+                float2 uvWorld = mul(unity_ObjectToWorld, v.vertex).xz;
+                
+                float2 uvWorld1 = uvWorld / _LengthScale1;
+                float2 uvWorld2 = uvWorld / _LengthScale2;
+                float2 uvWorld3 = uvWorld / _LengthScale3;
                 
                 float3 displacement = tex2Dlod(_DisplacementMap1, float4(uvWorld1, 0, 0));
                 displacement += tex2Dlod(_DisplacementMap2, float4(uvWorld2, 0, 0));
@@ -104,15 +103,13 @@ Shader "Unlit/Ocean"
                 v.vertex.y = displacement.y;
                 v.vertex.z += displacement.z;
 
-                posWorld = mul(unity_ObjectToWorld, v.vertex);
+                float3 posWorld = mul(unity_ObjectToWorld, v.vertex);
 
                 o.posWorld = posWorld;
                 
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
-                o.uvWorld1 = uvWorld1;
-                o.uvWorld2 = uvWorld2;
-                o.uvWorld3 = uvWorld3;
+                o.uvWorld = uvWorld;
                 UNITY_TRANSFER_FOG(o, o.pos);
                 return o;
             }
@@ -125,9 +122,9 @@ Shader "Unlit/Ocean"
             fixed4 frag (v2f i) : SV_Target
             {
                 float3 posWorld = i.posWorld;
-                float2 uvWorld1 = i.uvWorld1;
-                float2 uvWorld2 = i.uvWorld2;
-                float2 uvWorld3 = i.uvWorld3;
+                float2 uvWorld1 = i.uvWorld / _LengthScale1;
+                float2 uvWorld2 = i.uvWorld / _LengthScale2;
+                float2 uvWorld3 = i.uvWorld / _LengthScale3;
                 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
