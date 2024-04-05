@@ -105,7 +105,9 @@ Shader "Unlit/Ocean"
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
                 float3 halfVector = normalize(sunDirection + viewDirection);
-                float3 normal = tex2Dlod(_NormalMap, float4(uvWorld, 0, 0));
+
+                float2 derivatives = tex2Dlod(_NormalMap, float4(uvWorld, 0, 0)).rg;
+                float3 normal = normalize(float3(-derivatives.x, 1, -derivatives.y));
 
                 float part3 = _Tweak3 * normal;
                 float3 ambient = part3 * _WaterScatterColor * _LightColor0 + _DensityOfWaterBubbles * _AirBubblesColor * _LightColor0;
