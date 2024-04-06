@@ -138,7 +138,7 @@ public class Buoyancy : MonoBehaviour
         var sampleZ = worldZ;
         float height = 0;
         
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 3; i++)
         {
             float disX = 0;
             float disY = 0;
