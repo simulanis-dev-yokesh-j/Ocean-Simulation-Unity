@@ -138,7 +138,7 @@ public class Buoyancy : MonoBehaviour
         var sampleZ = worldZ;
         float height = 0;
         
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 8; i++)
         {
             float disX = 0;
             float disY = 0;
@@ -166,9 +166,9 @@ public class Buoyancy : MonoBehaviour
             disZ += dis3.GetPixel(x3, y3).b;
 
             // print($"({sampleX}, {sampleZ}): ({disX}, {disY}, {disZ})");
-            sampleX -= disX;
+            sampleX = worldX - disX;
             height = disY;
-            sampleZ -= disZ;
+            sampleZ = worldZ - disZ;
         }
 
         return height;
