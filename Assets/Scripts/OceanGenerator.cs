@@ -23,7 +23,8 @@ public class CascadeSettings
 
 [System.Serializable]
 public class OceanSettings
-{ 
+{
+    public float SimulationSpeed = 1;
     public int Seed = 10;
     public int Size = 512;
     public float WindSpeed = 17f;
@@ -71,7 +72,7 @@ public class OceanGenerator : MonoBehaviour
     private static readonly int LengthScale3 = Shader.PropertyToID("_LengthScale3");
 
 
-    private void Start()
+    private void Awake()
     {
         _commandBuffer = new CommandBuffer();
         _oceanGeometry = GetComponent<OceanGeometry>();
@@ -124,7 +125,7 @@ public class OceanGenerator : MonoBehaviour
     
     private void Update()
     {
-        _time += Time.deltaTime;
+        _time += Time.deltaTime * _oceanSettings.SimulationSpeed;
         _waveCascade1.Update(_time);
         _waveCascade2.Update(_time);
         _waveCascade3.Update(_time);
@@ -166,5 +167,35 @@ public class OceanGenerator : MonoBehaviour
     private void OnDestroy()
     {
         _commandBuffer.Release();
+    }
+
+    public WaveCascade GetWaveCascade1()
+    {
+        return _waveCascade1;
+    }
+
+    public CascadeSettings GetCascadeSettings1()
+    {
+        return _cascadeSettings1;
+    }
+    
+    public WaveCascade GetWaveCascade2()
+    {
+        return _waveCascade2;
+    }
+    
+    public CascadeSettings GetCascadeSettings2()
+    {
+        return _cascadeSettings2;
+    }
+    
+    public WaveCascade GetWaveCascade3()
+    {
+        return _waveCascade3;
+    }
+    
+    public CascadeSettings GetCascadeSettings3()
+    {
+        return _cascadeSettings3;
     }
 }
