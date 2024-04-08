@@ -1330,7 +1330,7 @@ MonoBehaviour:
     FFT: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
   _oceanSettings:
     Seed: 10
-    Size: 256
+    Size: 512
     WindSpeed: 21
     WindAngle: 45
     Depth: 500
@@ -1339,11 +1339,11 @@ MonoBehaviour:
     FoamIntensity: 0.75
     FoamDecay: 0.055
   _cascadeSettings1:
-    LengthScale: 512
+    LengthScale: 800
     LowCutoff: 0
     HighCutoff: 1
   _cascadeSettings2:
-    LengthScale: 256
+    LengthScale: 512
     LowCutoff: 1
     HighCutoff: 2
   _cascadeSettings3:
@@ -1366,7 +1366,7 @@ MonoBehaviour:
   _parent: {fileID: 1089990283}
   _ringSize: 256
   _resolution: 256
-  _numRings: 22
+  _numRings: 50
 --- !u!1 &503036186
 GameObject:
   m_ObjectHideFlags: 0
