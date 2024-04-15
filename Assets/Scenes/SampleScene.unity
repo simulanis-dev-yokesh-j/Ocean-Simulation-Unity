@@ -1328,6 +1328,7 @@ MonoBehaviour:
       type: 3}
     SpectrumWrapper: {fileID: 7200000, guid: ce81d37aee1894183aad5a31c1df0a27, type: 3}
     FFT: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
+    Blur: {fileID: 7200000, guid: ee892712f0831487680bc8f6267ff7ca, type: 3}
   _oceanSettings:
     Seed: 10
     Size: 256
@@ -1364,8 +1365,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _parent: {fileID: 1089990283}
-  _ringSize: 256
-  _resolution: 256
+  _ringSize: 512
+  _resolution: 512
   _numRings: 50
 --- !u!1 &503036186
 GameObject:

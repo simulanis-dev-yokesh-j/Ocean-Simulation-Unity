@@ -1,0 +1,57 @@
+#pragma kernel CopyToOutput
+#pragma kernel HorizontalBlur
+#pragma kernel VerticalBlur
+
+int Size;
+int KernelSize;
+StructuredBuffer<float> Kernel;
+RWTexture2D<float3> Input;
+RWTexture2D<float3> Data;
+
+[numthreads(8, 8, 1)]
+void CopyToOutput(uint3 id: SV_DispatchThreadID)
+{
+    Data[id.xy] = Input[id.xy];
+}
+
+[numthreads(8, 8, 1)]
+void HorizontalBlur(uint3 id: SV_DispatchThreadID)
+{
+    float3 average = 0;
+
+    for(int i = -KernelSize; i <= KernelSize; i++)
+    {
+        int offsetX = id.x + i;
+
+        if(offsetX < 0)
+            offsetX = 0;
+
+        if(offsetX >= Size)
+            offsetX = Size - 1;
+
+        average += Data[uint2(offsetX, id.y)] * Kernel[i + KernelSize];
+    }
+
+    Data[id.xy] = average;
+}
+
+[numthreads(8, 8, 1)]
+void VerticalBlur(uint3 id: SV_DispatchThreadID)
+{
+    float3 average = 0;
+
+    for(int i = -KernelSize; i <= KernelSize; i++)
+    {
+        int offsetY = id.y + i;
+
+        if(offsetY < 0)
+            offsetY = 0;
+
+        if(offsetY >= Size)
+            offsetY = Size - 1;
+ 
+        average += Data[uint2(id.x, offsetY)] * Kernel[i + KernelSize];
+    }
+
+    Data[id.xy] = average;
+}

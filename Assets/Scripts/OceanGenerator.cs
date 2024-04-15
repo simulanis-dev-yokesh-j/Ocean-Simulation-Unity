@@ -11,6 +11,7 @@ public struct OceanComputeShaders
     public ComputeShader TimeDependantSpectrum;
     public ComputeShader SpectrumWrapper;
     public ComputeShader FFT;
+    public ComputeShader Blur;
 }
 
 [System.Serializable]
@@ -47,6 +48,7 @@ public class OceanGenerator : MonoBehaviour
     [SerializeField] private CascadeSettings _cascadeSettings2;
     [SerializeField] private CascadeSettings _cascadeSettings3;
     [SerializeField] private Material _material;
+    [SerializeField] private bool _blurFoam;
 
     private WaveCascade _waveCascade1;
     private WaveCascade _waveCascade2;
@@ -54,6 +56,7 @@ public class OceanGenerator : MonoBehaviour
     // Other var
     private float _time;
     private ComputeFFT _fft;
+    private ComputeBlur _blur;
     private CommandBuffer _commandBuffer;
     private OceanGeometry _oceanGeometry;
     private Texture2D _gaussianNoise;
@@ -77,10 +80,11 @@ public class OceanGenerator : MonoBehaviour
         _oceanGeometry = GetComponent<OceanGeometry>();
         
         _fft = new ComputeFFT(_oceanSettings.Size, _commandBuffer, _computeShaders.FFT);
+        _blur = new ComputeBlur(_oceanSettings.Size, _commandBuffer, _computeShaders.Blur);
         _gaussianNoise = GenerateGaussianNoise(_oceanSettings.Size);
-        _waveCascade1 = new WaveCascade(_oceanSettings, _cascadeSettings1, _commandBuffer, _fft, _computeShaders, _gaussianNoise);
-        _waveCascade2 = new WaveCascade(_oceanSettings, _cascadeSettings2, _commandBuffer, _fft, _computeShaders, _gaussianNoise);
-        _waveCascade3 = new WaveCascade(_oceanSettings, _cascadeSettings3, _commandBuffer, _fft, _computeShaders, _gaussianNoise);
+        _waveCascade1 = new WaveCascade(_oceanSettings, _cascadeSettings1, _commandBuffer, _fft, _blur, _computeShaders, _gaussianNoise);
+        _waveCascade2 = new WaveCascade(_oceanSettings, _cascadeSettings2, _commandBuffer, _fft, _blur, _computeShaders, _gaussianNoise);
+        _waveCascade3 = new WaveCascade(_oceanSettings, _cascadeSettings3, _commandBuffer, _fft, _blur, _computeShaders, _gaussianNoise);
 
         AssignMaterialProperties();
         _oceanGeometry.GenerateGrid(_material);
@@ -95,10 +99,19 @@ public class OceanGenerator : MonoBehaviour
         _material.SetTexture(NormalMapID1, _waveCascade1.GetSpectrumWrapperData().NormalMap);
         _material.SetTexture(NormalMapID2, _waveCascade2.GetSpectrumWrapperData().NormalMap);
         _material.SetTexture(NormalMapID3, _waveCascade3.GetSpectrumWrapperData().NormalMap);
-        
-        _material.SetTexture(FoamMap1, _waveCascade1.GetSpectrumWrapperData().FoamMap);
-        _material.SetTexture(FoamMap2, _waveCascade2.GetSpectrumWrapperData().FoamMap);
-        _material.SetTexture(FoamMap3, _waveCascade3.GetSpectrumWrapperData().FoamMap);
+
+        if (_blurFoam)
+        {
+            _material.SetTexture(FoamMap1, _waveCascade1.GetSpectrumWrapperData().BlurFoamMap);
+            _material.SetTexture(FoamMap2, _waveCascade2.GetSpectrumWrapperData().BlurFoamMap);
+            _material.SetTexture(FoamMap3, _waveCascade3.GetSpectrumWrapperData().BlurFoamMap);
+        }
+        else
+        {
+            _material.SetTexture(FoamMap1, _waveCascade1.GetSpectrumWrapperData().FoamMap);
+            _material.SetTexture(FoamMap2, _waveCascade2.GetSpectrumWrapperData().FoamMap);
+            _material.SetTexture(FoamMap3, _waveCascade3.GetSpectrumWrapperData().FoamMap);
+        }
         
         _material.SetFloat(LengthScale1, _cascadeSettings1.LengthScale);
         _material.SetFloat(LengthScale2, _cascadeSettings2.LengthScale);
@@ -113,12 +126,13 @@ public class OceanGenerator : MonoBehaviour
         if(_commandBuffer == null)
             return;
         
-        _fft = new ComputeFFT(_oceanSettings.Size, _commandBuffer, _computeShaders.FFT);
-        _gaussianNoise = GenerateGaussianNoise(_oceanSettings.Size);
-        _waveCascade1 = new WaveCascade(_oceanSettings, _cascadeSettings1, _commandBuffer, _fft, _computeShaders, _gaussianNoise);
-        _waveCascade2 = new WaveCascade(_oceanSettings, _cascadeSettings2, _commandBuffer, _fft, _computeShaders, _gaussianNoise);
-        _waveCascade3 = new WaveCascade(_oceanSettings, _cascadeSettings3, _commandBuffer, _fft, _computeShaders, _gaussianNoise);
-        
+        // _fft = new ComputeFFT(_oceanSettings.Size, _commandBuffer, _computeShaders.FFT);
+        // _blur = new ComputeBlur(_oceanSettings.Size, _commandBuffer, _computeShaders.Blur);
+        // _gaussianNoise = GenerateGaussianNoise(_oceanSettings.Size);
+        // _waveCascade1 = new WaveCascade(_oceanSettings, _cascadeSettings1, _commandBuffer, _fft, _blur, _computeShaders, _gaussianNoise);
+        // _waveCascade2 = new WaveCascade(_oceanSettings, _cascadeSettings2, _commandBuffer, _fft, _blur, _computeShaders, _gaussianNoise);
+        // _waveCascade3 = new WaveCascade(_oceanSettings, _cascadeSettings3, _commandBuffer, _fft, _blur, _computeShaders, _gaussianNoise);
+        //
         AssignMaterialProperties();
     }
     

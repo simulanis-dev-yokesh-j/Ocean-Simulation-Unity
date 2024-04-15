@@ -35,6 +35,7 @@ public class WaveCascade
         public RenderTexture NormalMap;
         public RenderTexture DisplacementMap;
         public RenderTexture FoamMap;
+        public RenderTexture BlurFoamMap;
     }
     
     private OceanSettings _oceanSettings;
@@ -43,12 +44,13 @@ public class WaveCascade
     private OceanComputeShaders _computeShaders;
     private CommandBuffer _commandBuffer;
     private ComputeFFT _fft;
+    private ComputeBlur _blur;
     
     private InitSpectrumData _initSpectrumData;
     private TimeDependantSpectrumData _timeDependantSpectrumData;
     private SpectrumWrapperData _spectrumWrapperData;
     
-    public WaveCascade(OceanSettings oceanSettings, CascadeSettings cascadeSettings, CommandBuffer commandBuffer, ComputeFFT fft, OceanComputeShaders computeShaders, Texture2D gaussianNoise)
+    public WaveCascade(OceanSettings oceanSettings, CascadeSettings cascadeSettings, CommandBuffer commandBuffer, ComputeFFT fft, ComputeBlur blur, OceanComputeShaders computeShaders, Texture2D gaussianNoise)
     {
         _oceanSettings = oceanSettings;
         _cascadeSettings = cascadeSettings;
@@ -56,6 +58,7 @@ public class WaveCascade
         _computeShaders = computeShaders;
         _commandBuffer = commandBuffer;
         _fft = fft;
+        _blur = blur;
         
         InitRenderTextures();
         GenerateInitSpectrum();
@@ -84,6 +87,7 @@ public class WaveCascade
         _spectrumWrapperData.DisplacementMap = Utilities.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat);
         _spectrumWrapperData.NormalMap = Utilities.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat);
         _spectrumWrapperData.FoamMap = Utilities.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat);
+        _spectrumWrapperData.BlurFoamMap = Utilities.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat);
     }
     
     private void GenerateInitSpectrum()
@@ -169,6 +173,8 @@ public class WaveCascade
         _commandBuffer.SetComputeTextureParam(shader, kernel, "FoamMap", _spectrumWrapperData.FoamMap);
 
         _commandBuffer.DispatchCompute(shader, kernel, size / 8, size / 8, 1);
+        
+        _blur.Blur(_spectrumWrapperData.FoamMap, _spectrumWrapperData.BlurFoamMap);
     }
 
     public SpectrumWrapperData GetSpectrumWrapperData()
