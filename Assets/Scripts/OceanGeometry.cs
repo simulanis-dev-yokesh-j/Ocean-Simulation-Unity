@@ -36,6 +36,11 @@ public class OceanGeometry : MonoBehaviour
                 
                 GameObject ring = new GameObject("Ring " + ringNumber);
                 ring.transform.parent = _parent;
+
+                ring.transform.position = new Vector3(ring.transform.position.x,
+                                                        ring.transform.position.y - ringNumber * 5, 
+                                                        ring.transform.position.z);
+
                 ring.AddComponent<MeshFilter>().mesh = ringMesh;
                 ring.AddComponent<MeshRenderer>().material = material;
             }

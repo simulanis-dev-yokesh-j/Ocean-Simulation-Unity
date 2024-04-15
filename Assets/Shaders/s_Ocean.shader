@@ -128,7 +128,6 @@ Shader "Unlit/Ocean"
                 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
                 float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
-                float3 halfVector = normalize(sunDirection + viewDirection);
 
                 float2 derivatives = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0)).rg;
                 derivatives += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0)).rg;
