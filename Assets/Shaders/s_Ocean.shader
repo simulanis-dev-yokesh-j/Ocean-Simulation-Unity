@@ -163,7 +163,7 @@ Shader "Unlit/Ocean"
                 if(foam > 0)
                 {
                     float3 foamColor = float3(foam, foam, foam);
-                    output = saturate(output + foamColor);
+                    output = saturate(output + foamColor) * max(_LightColor0, 0.4);
                 }
 
                 // apply fog

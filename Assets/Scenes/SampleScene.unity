@@ -1330,7 +1330,7 @@ MonoBehaviour:
     FFT: {fileID: 7200000, guid: aad10a7c625dd4239b07227693e96960, type: 3}
   _oceanSettings:
     Seed: 10
-    Size: 512
+    Size: 256
     WindSpeed: 21
     WindAngle: 45
     Depth: 500
@@ -1339,15 +1339,15 @@ MonoBehaviour:
     FoamIntensity: 0.75
     FoamDecay: 0.055
   _cascadeSettings1:
-    LengthScale: 800
+    LengthScale: 600
     LowCutoff: 0
     HighCutoff: 1
   _cascadeSettings2:
-    LengthScale: 512
+    LengthScale: 256
     LowCutoff: 1
     HighCutoff: 2
   _cascadeSettings3:
-    LengthScale: 125
+    LengthScale: 80
     LowCutoff: 2
     HighCutoff: 9999
   _material: {fileID: 2100000, guid: 67fbac55d83f64253b4c13f8cb37bced, type: 2}
