@@ -154,7 +154,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DensityOfWaterBubbles: 0.51
+    - _DensityOfWaterBubbles: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -168,7 +168,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Reflectivity: 0.15
+    - _Reflectivity: 1.14
     - _RefractiveIndex: 0.76
     - _Scale: 1
     - _Shininess: 50
