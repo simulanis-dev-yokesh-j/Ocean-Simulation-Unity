@@ -147,7 +147,7 @@ Shader "Unlit/Ocean"
                 float part1 = _Tweak1 * max(0, posWorld.y) * pow(DotClamped(sunDirection, -viewDirection), 4.0f) * pow(0.5f - 0.5f * dot(sunDirection, normal), 3.0f);
 				float part2 = _Tweak2 * pow(DotClamped(viewDirection, normal), 2.0f);
                 
-				float3 scatter = (part1 + part2) * _WaterScatterColor * _LightColor0;
+				float3 scatter = (1 - fresnel) * (part1 + part2) * _WaterScatterColor * _LightColor0;
 
                 float3 I = normalize(posWorld - _WorldSpaceCameraPos);
                 half4 skyData = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, reflect(I, normal));
