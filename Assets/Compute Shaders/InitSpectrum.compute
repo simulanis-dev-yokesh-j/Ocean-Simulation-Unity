@@ -123,7 +123,7 @@ float BaseSpread(float dispersion, float angle)
     return firstPart * secondPart;
 }
 
-float SweelDirection(float dispertion, float angle)
+float SwellDirection(float dispertion, float angle)
 {
     float s = 16 * tanh(DispersionPeak() / dispertion) * Swell * Swell;
     return NormalizationFactor(s) * pow(abs(cos(angle/2)), 2 * s);
@@ -132,7 +132,7 @@ float SweelDirection(float dispertion, float angle)
 float DirectionalSpread(float dispersion, float angle)
 {
     float base = BaseSpread(dispersion, angle);
-    float sweel = SweelDirection(dispersion, angle);
+    float sweel = SwellDirection(dispersion, angle);
     return base * sweel;
 }
 
@@ -152,7 +152,7 @@ float FinalDirectionalSpread(float dispersion, float angle)
 {
     float integration = IntegratedDirectionalSpread(dispersion);
     float base = BaseSpread(dispersion, angle);
-    float swell = SweelDirection(dispersion, angle);
+    float swell = SwellDirection(dispersion, angle);
     return integration * base * swell;
 }
 
