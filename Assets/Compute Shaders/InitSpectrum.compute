@@ -45,11 +45,16 @@ float fmod(float a, float b)
 
 float GammaApprox(float x)
 {
-    float g2 = x * x;
-    float g3 = g2 * x;
-    float g4 = g3 *x;
-    
-    return g4;
+    float firstPart = sqrt(2 * PI / x) * pow(x / exp(1), x);
+    float secondPart = 1 + 1 / (12 * x) + 1 / (288 * x * x) - 139 / (51840 * x * x * x) - 571 / (2488320 * x * x * x * x);
+    return firstPart * secondPart;
+}
+
+float NormalizationFactor(float s)
+{
+    float firstPart = pow(2, 2*s - 1) / PI;
+    float secondPart = pow(GammaApprox(s+1), 2) / GammaApprox(2*s + 1);
+    return firstPart * secondPart;
 }
 
 float WaveAngle(float2 k)
@@ -118,15 +123,42 @@ float BaseSpread(float dispersion, float angle)
     return firstPart * secondPart;
 }
 
+float SweelDirection(float dispertion, float angle)
+{
+    float s = 16 * tanh(DispersionPeak() / dispertion) * Swell * Swell;
+    return NormalizationFactor(s) * pow(abs(cos(angle/2)), 2 * s);
+}
+
 float DirectionalSpread(float dispersion, float angle)
 {
     float base = BaseSpread(dispersion, angle);
-    return base;
+    float sweel = SweelDirection(dispersion, angle);
+    return base * sweel;
+}
+
+float IntegratedDirectionalSpread(float dispersion)
+{
+    float step = 0.01;
+    float sum = 0;
+    for(float angle = -PI; angle < PI; angle += step)
+    {
+        sum += DirectionalSpread(dispersion, angle) * step;
+    }
+
+    return 1/sum;
+}
+
+float FinalDirectionalSpread(float dispersion, float angle)
+{
+    float integration = IntegratedDirectionalSpread(dispersion);
+    float base = BaseSpread(dispersion, angle);
+    float swell = SweelDirection(dispersion, angle);
+    return integration * base * swell;
 }
 
 float Spectrum(float kLength, float dispersion, float angle)
 {
-    return JONSWAP(dispersion) * DirectionalSpread(dispersion, angle) * DispersionDerivative(kLength) / kLength;
+    return JONSWAP(dispersion) * FinalDirectionalSpread(dispersion, angle) * DispersionDerivative(kLength) / kLength;
 }
 
 float2 FourierWaveAmplitude(float2 pos, float2 k, float dispersion, float angle)

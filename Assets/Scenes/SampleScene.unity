@@ -1340,11 +1340,11 @@ MonoBehaviour:
     FoamIntensity: 0.67
     FoamDecay: 0.055
   _cascadeSettings1:
-    LengthScale: 600
+    LengthScale: 256
     LowCutoff: 0
     HighCutoff: 1
   _cascadeSettings2:
-    LengthScale: 256
+    LengthScale: 100
     LowCutoff: 1
     HighCutoff: 2
   _cascadeSettings3:
@@ -1380,7 +1380,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81294584b9e584bdca65dd14cbf20111, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  windSpeed: 0
 --- !u!1 &503036186
 GameObject:
   m_ObjectHideFlags: 0

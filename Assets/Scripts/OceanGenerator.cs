@@ -30,6 +30,8 @@ public class OceanSettings
     [Range(0, 360)] 
     public float WindAngle = 45;
     public float Depth = 500f;
+    [FormerlySerializedAs("Sweel")] [Range(0, 1)]
+    public float Swell = 0.5f;
     public float DistanceToShore = 1000f;
     [Range(0, 2)] 
     public float WaveChopyFactor = 0.9f;

@@ -99,6 +99,7 @@ public class WaveCascade
         _commandBuffer.SetComputeFloatParam(shader, "HighCutoff", _cascadeSettings.HighCutoff);
         _commandBuffer.SetComputeFloatParam(shader, "WindSpeed", _oceanSettings.WindSpeed);
         _commandBuffer.SetComputeFloatParam(shader, "WindAngle", _oceanSettings.WindAngle);
+        _commandBuffer.SetComputeFloatParam(shader, "Swell", _oceanSettings.Swell);
         _commandBuffer.SetComputeFloatParam(shader, "Fetch", _oceanSettings.DistanceToShore * 1000);
         _commandBuffer.SetComputeFloatParam(shader, "Depth", _oceanSettings.Depth);
         _commandBuffer.SetComputeTextureParam(shader, kernel, "Noise", _gaussianNoise);
