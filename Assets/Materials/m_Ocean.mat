@@ -154,7 +154,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DensityOfWaterBubbles: 0.5
+    - _DensityOfWaterBubbles: 0.45
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -168,7 +168,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Reflectivity: 0.67
+    - _Reflectivity: 0.41
     - _RefractiveIndex: 0.76
     - _Scale: 1
     - _Shininess: 50
@@ -186,7 +186,7 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _AirBubblesColor: {r: 0.14901961, g: 0.31073976, b: 0.41568628, a: 1}
+    - _AirBubblesColor: {r: 0.22745098, g: 0.30698854, b: 0.3882353, a: 1}
     - _AmbientColor: {r: 1, g: 1, b: 1, a: 1}
     - _AmientColor: {r: 0.8396226, g: 0.16237983, b: 0.16237983, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
