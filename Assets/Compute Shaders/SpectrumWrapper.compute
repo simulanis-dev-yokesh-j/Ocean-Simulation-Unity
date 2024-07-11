@@ -1,0 +1,42 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ComputeWrapper
+
+// ====== Inputs ======
+float DeltaTime;
+float DisplacementFactor;
+float FoamIntensity;
+float FoamDecay;
+RWTexture2D<float4> HeightDerivative;
+RWTexture2D<float4> HeightMap;
+RWTexture2D<float4> HorizontalDisplacementMap;
+RWTexture2D<float4> JacobianXxZzMap;
+RWTexture2D<float2> JacobianXzMap;
+
+// ====== Outputs ======
+RWTexture2D<float4> NormalMap;
+RWTexture2D<float4> DisplacementMap;
+RWTexture2D<float4> FoamMap; 
+
+[numthreads(8,8,1)]
+void ComputeWrapper (uint3 id : SV_DispatchThreadID)
+{
+    float tangent = HeightDerivative[id.xy].x;
+    float bitangent = HeightDerivative[id.xy].y;
+    // float3 normal = normalize(float3(-tangent, 1, -bitangent));
+
+    float j_xx = 1 + DisplacementFactor * JacobianXxZzMap[id.xy].x;
+    float j_zz = 1 + DisplacementFactor * JacobianXxZzMap[id.xy].y;
+    float j_xz = DisplacementFactor * JacobianXzMap[id.xy].x;
+    float jacobian = j_xx * j_zz - j_xz * j_xz;
+    jacobian *= -1;
+    jacobian += FoamIntensity;
+    
+    // Foam Accumulation
+    float accumulation = FoamMap[id.xy].x - FoamDecay * DeltaTime / max(jacobian, 0.5);
+    float foam = max(accumulation, jacobian);
+
+    NormalMap[id.xy] = float4(tangent, bitangent, 0, 1);
+    DisplacementMap[id.xy] = float4(DisplacementFactor * HorizontalDisplacementMap[id.xy].x, HeightMap[id.xy].x, DisplacementFactor * HorizontalDisplacementMap[id.xy].y, 1);
+    FoamMap[id.xy] = float4(foam, foam, foam, 1);
+
+}
