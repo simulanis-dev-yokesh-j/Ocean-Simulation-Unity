@@ -90,12 +90,16 @@ Shader "Unlit/Ocean"
                 v2f o;
 
                 float2 uvWorld = mul(unity_ObjectToWorld, v.vertex).xz;
+                
                 float2 uvWorld1 = uvWorld / _LengthScale1;
+                float2 uvWorld2 = uvWorld / _LengthScale2;
+                float2 uvWorld3 = uvWorld / _LengthScale3;
+                
                 float3 displacement = tex2Dlod(_DisplacementMap1, float4(uvWorld1, 0, 0));
-                v.vertex.x += displacement.x;
-                v.vertex.y = displacement.y;
-                v.vertex.z += displacement.z;
-                o.uvWorld = uvWorld;
+                displacement += tex2Dlod(_DisplacementMap2, float4(uvWorld2, 0, 0));
+                displacement += tex2Dlod(_DisplacementMap3, float4(uvWorld3, 0, 0));
+                
+                v.vertex.xyz += displacement.xyz;
 
                 float3 posWorld = mul(unity_ObjectToWorld, v.vertex);
 
@@ -117,7 +121,15 @@ Shader "Unlit/Ocean"
             {
                 float3 posWorld = i.posWorld;
                 float2 uvWorld1 = i.uvWorld / _LengthScale1;
+                float2 uvWorld2 = i.uvWorld / _LengthScale2;
+                float2 uvWorld3 = i.uvWorld / _LengthScale3;
+                
+                float3 viewDirection = normalize(_WorldSpaceCameraPos - posWorld);
+                float3 sunDirection = normalize(_WorldSpaceLightPos0.xyz);
+
                 float2 derivatives = tex2Dlod(_NormalMap1, float4(uvWorld1, 0, 0)).rg;
+                derivatives += tex2Dlod(_NormalMap2, float4(uvWorld2, 0, 0)).rg;
+                derivatives += tex2Dlod(_NormalMap3, float4(uvWorld3, 0, 0)).rg;
                 float3 normal = normalize(float3(-derivatives.x, 1, -derivatives.y));
 
                 float part3 = _Tweak3 * normal;
