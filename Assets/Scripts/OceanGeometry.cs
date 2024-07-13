@@ -42,7 +42,9 @@ public class OceanGeometry : MonoBehaviour
                                                         ring.transform.position.z);
 
                 ring.AddComponent<MeshFilter>().mesh = ringMesh;
-                ring.AddComponent<MeshRenderer>().material = material;
+                MeshRenderer meshRenderer = ring.AddComponent<MeshRenderer>();
+                meshRenderer.material = material;
+                meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
             }
         }
     }

@@ -23,7 +23,8 @@ public class CascadeSettings
 
 [System.Serializable]
 public class OceanSettings
-{ 
+{
+    public float Speed = 1;
     public int Seed = 10;
     public int Size = 512;
     public float WindSpeed = 17f;
@@ -126,7 +127,7 @@ public class OceanGenerator : MonoBehaviour
     
     private void Update()
     {
-        _time += Time.deltaTime;
+        _time += Time.deltaTime * _oceanSettings.Speed;
         _waveCascade1.Update(_time);
         _waveCascade2.Update(_time);
         _waveCascade3.Update(_time);

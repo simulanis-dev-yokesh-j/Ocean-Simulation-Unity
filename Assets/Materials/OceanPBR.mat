@@ -210,6 +210,7 @@ Material:
     - _Ior: 1.5
     - _IridescenceMask: 1
     - _IridescenceThickness: 1
+    - _LOD: 52.6
     - _LengthScale1: 600
     - _LengthScale2: 256
     - _LengthScale3: 50
