@@ -32,7 +32,7 @@ public class OceanGeometry : MonoBehaviour
                     continue;
 
                 Vector2 planeStartPoint = new Vector2(startPoint.x + x * _ringSize, startPoint.y - z * _ringSize);
-                Mesh ringMesh = GeneratePlane(_ringSize, ringResolution, planeStartPoint);
+                Mesh ringMesh = GenerateHorizontal(250, 250, 2, true);
                 
                 GameObject ring = new GameObject("Ring " + ringNumber);
                 ring.transform.parent = _parent;
@@ -49,45 +49,50 @@ public class OceanGeometry : MonoBehaviour
         }
     }
 
-    private Mesh GeneratePlane(int size, int resolution, Vector2 startPoint)
+    public Mesh GenerateHorizontal(int width, int height, float unitLength, bool isHorizontal)
     {
-        Vector3[] vertices = new Vector3[(resolution + 1) * (resolution + 1)];
-        int[] triangles = new int[resolution * resolution * 6];
-
-        float increment = 1f / resolution;
-        int vertIndex = 0;
-        int triIndex = 0;
-
-        // Create vertices and triangles
-        for (int y = 0; y <= resolution; y++)
+        var halfWidth = width * unitLength / 2f;
+        var halfHeight = height * unitLength / 2f;
+        var positionDelta =
+            isHorizontal ? new Vector3(-halfWidth, 0, -halfHeight) : new Vector3(-halfWidth, -halfHeight); 
+        width++;
+        height++;
+        var direction = isHorizontal ? Vector3.forward : Vector3.up;
+        var verticesCount = width * height;
+        var triangleCount = (width - 1) * (height - 1) * 2;
+        var vertices = new Vector3[verticesCount];
+        var uvs = new Vector2[verticesCount];
+        var triangles = new int[triangleCount * 3];
+        var trisIndex = 0;
+        for (var w = 0; w < width; w++)
         {
-            for (int x = 0; x <= resolution; x++)
+            for (var h = 0; h < height; h++)
             {
-                vertices[vertIndex] = new Vector3(size * x * increment + startPoint.x, 0, size * y * increment - startPoint.y);
-
-                if (x != resolution && y != resolution)
+                var vertIndex = h * width + w;
+                var position = Vector3.right * w * unitLength + direction * h * unitLength;
+                vertices[vertIndex] = position + positionDelta;
+                uvs[vertIndex] = new Vector2(w / (width - 1f), h / (height - 1f));
+                if (w == width - 1 || h == height - 1)
                 {
-                    triangles[triIndex] = vertIndex;
-                    triangles[triIndex + 1] = vertIndex + resolution + 1;
-                    triangles[triIndex + 2] = vertIndex + resolution + 2;
-
-                    triangles[triIndex + 3] = vertIndex;
-                    triangles[triIndex + 4] = vertIndex + resolution + 2;
-                    triangles[triIndex + 5] = vertIndex + 1;
-
-                    triIndex += 6;
+                    continue;
                 }
-                vertIndex++;
+
+                triangles[trisIndex++] = vertIndex;
+                triangles[trisIndex++] = vertIndex + width;
+                triangles[trisIndex++] = vertIndex + width + 1;
+                triangles[trisIndex++] = vertIndex;
+                triangles[trisIndex++] = vertIndex + width + 1;
+                triangles[trisIndex++] = vertIndex + 1;
             }
         }
 
-        //Create mesh
-        Mesh mesh = new Mesh();
-        mesh.name = "Ocean Mesh";
-        mesh.indexFormat = IndexFormat.UInt32;
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-
+        var mesh = new Mesh {vertices = vertices, triangles = triangles, uv = uvs};
+        // mesh.indexFormat = IndexFormat.UInt32;
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        
         return mesh;
     }
+
 }
