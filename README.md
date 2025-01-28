@@ -1,12 +1,7 @@
 [Report](https://github.com/Biebras/Ocean-Simulation-Unity/blob/main/Realistic%20Ocean%20Simulation%20using%20Fourier%20Transform.pdf)
 
-https://github.com/uol-feps-soc-comp3931-2324-classroom/final-year-project-Biebras/assets/49594342/322ae0c9-ae69-4b8c-9c65-b5cd3d01363f
+https://github.com/user-attachments/assets/32c0f308-5a07-49f2-adfa-07cac6d0ed73
 
+https://github.com/user-attachments/assets/3532ff76-cac4-4b4e-ae67-7568499f148f
 
-
-https://github.com/uol-feps-soc-comp3931-2324-classroom/final-year-project-Biebras/assets/49594342/5e4a54d0-111a-40c6-9d4f-35cc22bf3921
-
-
-
-https://github.com/uol-feps-soc-comp3931-2324-classroom/final-year-project-Biebras/assets/49594342/e4cbad53-0ce2-42b5-a0dd-53bafa9d65c6
-
+https://github.com/user-attachments/assets/65b45a54-7ee3-46e8-814c-7a1ac8ab768a
