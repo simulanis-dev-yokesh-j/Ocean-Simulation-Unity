@@ -186,7 +186,7 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _AirBubblesColor: {r: 0.22745098, g: 0.30698854, b: 0.3882353, a: 1}
+    - _AirBubblesColor: {r: 0.3475881, g: 0.513974, b: 0.6886792, a: 1}
     - _AmbientColor: {r: 1, g: 1, b: 1, a: 1}
     - _AmientColor: {r: 0.8396226, g: 0.16237983, b: 0.16237983, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -197,7 +197,7 @@ Material:
     - _SpecColor: {r: 3.6886048, g: 2.6565356, b: 1.9312979, a: 1}
     - _SpecularColor: {r: 0.8773585, g: 0.07863116, b: 0.07863116, a: 1}
     - _WaterScaterColor: {r: 1, g: 1, b: 1, a: 1}
-    - _WaterScatterColor: {r: 0.2240566, g: 0.5, b: 0.45033017, a: 1}
+    - _WaterScatterColor: {r: 0.55891776, g: 0.754717, b: 0.7188664, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &3792469533237475076
 MonoBehaviour:
