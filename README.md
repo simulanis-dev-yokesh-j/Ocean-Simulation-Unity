@@ -1,6 +1,7 @@
 # FFT Ocean Simulation + TMA Spectrum
 
-[Report](https://github.com/Biebras/Ocean-Simulation-Unity/blob/main/Realistic%20Ocean%20Simulation%20using%20Fourier%20Transform.pdf)
+[Realistic Ocean Simulation using Fourier Transform Thesis.pdf](https://github.com/user-attachments/files/18606175/Realistic.Ocean.Simulation.using.Fourier.Transform.pdf)
+
 
 https://github.com/user-attachments/assets/32c0f308-5a07-49f2-adfa-07cac6d0ed73
 
