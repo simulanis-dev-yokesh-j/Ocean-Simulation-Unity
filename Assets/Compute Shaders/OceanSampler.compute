@@ -1,0 +1,145 @@
+#pragma kernel SampleOceanHeights
+#pragma kernel SampleOceanData
+
+// Input textures from ocean simulation
+Texture2D<float4> DisplacementMap1;
+Texture2D<float4> DisplacementMap2; 
+Texture2D<float4> DisplacementMap3;
+Texture2D<float2> NormalMap1;
+Texture2D<float2> NormalMap2;
+Texture2D<float2> NormalMap3;
+
+// Scale parameters
+float LengthScale1;
+float LengthScale2;
+float LengthScale3;
+float WaveHeightMultiplier;
+
+// Sampling points buffer
+struct SamplePoint
+{
+    float3 worldPosition;
+    float waterHeight;
+    float3 waterNormal;
+    float3 waterVelocity;
+    float4 additionalData; // Can store foam, displacement, etc.
+};
+
+RWStructuredBuffer<SamplePoint> SamplePoints;
+int SampleCount;
+
+// Linear sampler for smooth interpolation
+SamplerState LinearClampSampler;
+
+float3 SampleDisplacement(float2 worldPos)
+{
+    float3 totalDisplacement = float3(0, 0, 0);
+    
+    // Sample cascade 1
+    float2 uv1 = worldPos / LengthScale1;
+    float4 disp1 = DisplacementMap1.SampleLevel(LinearClampSampler, uv1, 0);
+    totalDisplacement += disp1.xyz;
+    
+    // Sample cascade 2  
+    float2 uv2 = worldPos / LengthScale2;
+    float4 disp2 = DisplacementMap2.SampleLevel(LinearClampSampler, uv2, 0);
+    totalDisplacement += disp2.xyz;
+    
+    // Sample cascade 3
+    float2 uv3 = worldPos / LengthScale3;
+    float4 disp3 = DisplacementMap3.SampleLevel(LinearClampSampler, uv3, 0);
+    totalDisplacement += disp3.xyz;
+    
+    return totalDisplacement;
+}
+
+float2 SampleNormalDerivatives(float2 worldPos)
+{
+    float2 totalDerivatives = float2(0, 0);
+    
+    // Sample cascade 1
+    float2 uv1 = worldPos / LengthScale1;
+    float2 norm1 = NormalMap1.SampleLevel(LinearClampSampler, uv1, 0);
+    totalDerivatives += norm1;
+    
+    // Sample cascade 2
+    float2 uv2 = worldPos / LengthScale2;
+    float2 norm2 = NormalMap2.SampleLevel(LinearClampSampler, uv2, 0);
+    totalDerivatives += norm2;
+    
+    // Sample cascade 3
+    float2 uv3 = worldPos / LengthScale3;
+    float2 norm3 = NormalMap3.SampleLevel(LinearClampSampler, uv3, 0);
+    totalDerivatives += norm3;
+    
+    return totalDerivatives;
+}
+
+float3 CalculateWaterVelocity(float2 worldPos, float deltaTime)
+{
+    // Simple velocity approximation using finite differences
+    float offset = 0.1f;
+    
+    float3 displacement = SampleDisplacement(worldPos);
+    float3 displacementX = SampleDisplacement(worldPos + float2(offset, 0));
+    float3 displacementZ = SampleDisplacement(worldPos + float2(0, offset));
+    
+    float3 velocity = float3(
+        (displacementX.x - displacement.x) / deltaTime,
+        (displacementX.y + displacementZ.y - 2 * displacement.y) / deltaTime,
+        (displacementZ.z - displacement.z) / deltaTime
+    );
+    
+    return velocity * 0.1f; // Scale factor
+}
+
+[numthreads(64, 1, 1)]
+void SampleOceanHeights(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)SampleCount)
+        return;
+        
+    SamplePoint point = SamplePoints[id.x];
+    float2 worldPos = point.worldPosition.xz;
+    
+    // Sample displacement to get water height
+    float3 displacement = SampleDisplacement(worldPos);
+    point.waterHeight = displacement.y * WaveHeightMultiplier;
+    
+    // Sample normal derivatives and calculate normal
+    float2 derivatives = SampleNormalDerivatives(worldPos);
+    point.waterNormal = normalize(float3(-derivatives.x, 1.0f, -derivatives.y));
+    
+    // Store back to buffer
+    SamplePoints[id.x] = point;
+}
+
+[numthreads(64, 1, 1)]
+void SampleOceanData(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)SampleCount)
+        return;
+        
+    SamplePoint point = SamplePoints[id.x];
+    float2 worldPos = point.worldPosition.xz;
+    
+    // Sample displacement to get water height and horizontal displacement
+    float3 displacement = SampleDisplacement(worldPos);
+    point.waterHeight = displacement.y * WaveHeightMultiplier;
+    
+    // Sample normal derivatives and calculate normal
+    float2 derivatives = SampleNormalDerivatives(worldPos);
+    point.waterNormal = normalize(float3(-derivatives.x, 1.0f, -derivatives.y));
+    
+    // Calculate water velocity (simplified)
+    point.waterVelocity = CalculateWaterVelocity(worldPos, 0.02f);
+    
+    // Store additional data (foam intensity, horizontal displacement magnitude, etc.)
+    point.additionalData.x = length(displacement.xz); // Horizontal displacement magnitude
+    point.additionalData.y = saturate(length(derivatives) * 10.0f); // Foam approximation
+    point.additionalData.z = displacement.y; // Raw height displacement
+    point.additionalData.w = 0.0f; // Reserved for future use
+    
+    // Store back to buffer
+    SamplePoints[id.x] = point;
+} 

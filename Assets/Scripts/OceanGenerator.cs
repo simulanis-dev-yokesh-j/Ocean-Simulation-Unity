@@ -169,4 +169,61 @@ public class OceanGenerator : MonoBehaviour
     {
         _commandBuffer.Release();
     }
+    
+    // Public API for external systems (like buoyancy)
+    public WaveCascade GetWaveCascade(int index)
+    {
+        switch (index)
+        {
+            case 0: return _waveCascade1;
+            case 1: return _waveCascade2;
+            case 2: return _waveCascade3;
+            default: return null;
+        }
+    }
+    
+    public OceanSettings GetOceanSettings()
+    {
+        return _oceanSettings;
+    }
+    
+    public CascadeSettings GetCascadeSettings(int index)
+    {
+        switch (index)
+        {
+            case 0: return _cascadeSettings1;
+            case 1: return _cascadeSettings2;
+            case 2: return _cascadeSettings3;
+            default: return null;
+        }
+    }
+    
+    public Material GetOceanMaterial()
+    {
+        return _material;
+    }
+    
+    public RenderTexture GetDisplacementMap(int cascadeIndex)
+    {
+        var cascade = GetWaveCascade(cascadeIndex);
+        return cascade?.GetSpectrumWrapperData().DisplacementMap;
+    }
+    
+    public RenderTexture GetNormalMap(int cascadeIndex)
+    {
+        var cascade = GetWaveCascade(cascadeIndex);
+        return cascade?.GetSpectrumWrapperData().NormalMap;
+    }
+    
+    public RenderTexture GetFoamMap(int cascadeIndex)
+    {
+        var cascade = GetWaveCascade(cascadeIndex);
+        return cascade?.GetSpectrumWrapperData().FoamMap;
+    }
+    
+    public float GetLengthScale(int cascadeIndex)
+    {
+        var settings = GetCascadeSettings(cascadeIndex);
+        return settings?.LengthScale ?? 0f;
+    }
 }

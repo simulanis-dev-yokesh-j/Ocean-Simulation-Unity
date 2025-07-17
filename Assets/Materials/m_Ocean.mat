@@ -199,6 +199,7 @@ Material:
     - _WaterScaterColor: {r: 1, g: 1, b: 1, a: 1}
     - _WaterScatterColor: {r: 0.55891776, g: 0.754717, b: 0.7188664, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!114 &3792469533237475076
 MonoBehaviour:
   m_ObjectHideFlags: 11
